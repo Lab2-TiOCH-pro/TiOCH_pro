@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     libffi-dev \
@@ -21,11 +21,11 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Copy the FastAPI app code into the container
+# Copy the app code
 COPY . .
 
-# Expose the port FastAPI will run on
+# Expose FastAPI default port
 EXPOSE 8000
 
-# Command to run the app with uvicorn
-CMD ["fastapi", "run", "main.py", "--limit-max-request-size 10485760"]
+# Run the application
+CMD ["fastapi", "run", "./app/main.py"]
