@@ -41,12 +41,13 @@ TiOCH_pro/
 │   ├── routes.py         # API routes
 │   ├── models.py         # Pydantic models
 │   ├── config.py         # Config constants (MIME types, size)
-│   ├── utils.py          # Validation helpers
-│   └── converter.py      # FileConversion class for text extraction
-│
+│   └── utils.py          # Validation helpers
+│── FileConversion/
+│   └── converter.py           # FileConversion class for text extraction
 ├── tests/
-│   ├── test_file_upload.py       # Integration tests for /file endpoint
-│   └── test_file_conversion.py   # Unit tests for file content parsing
+│   ├── test_file_upload.py         # Integration tests for /file endpoint
+│   ├── test_website_extraction.py  # Integration tests for /website endpoint
+│   └── test_file_conversion.py     # Unit tests for file content parsing
 ```
 
 ---
@@ -55,7 +56,7 @@ TiOCH_pro/
 
 ### `POST /file`
 
-Uploads a file and extracts text.
+Uploads a document and extracts plain text content from supported formats. Supports PDF, DOCX, XLSX, CSV, HTML, TXT, JSON, and XML. Max file size: 10MB.
 
 #### Request
 
@@ -83,6 +84,40 @@ curl -X POST "http://localhost:8000/file" \
 
 - `400 Bad Request` – File type not allowed
 - `413 Payload Too Large` – File exceeds 10 MB
+
+---
+
+### `POST /website`
+
+Fetches the contents of a public webpage and extracts clean text from its HTML using BeautifulSoup.
+
+#### Request
+
+Send a `application/json` body request:
+
+**Example with `curl`:**
+```bash
+curl -X POST "http://localhost:8000/website" \
+  -H "Content-Type: application/json" \
+  -d '{"website_url": "https://example.com"}'
+```
+
+#### Response
+```json
+{
+  "text": "Extracted text content...",
+  "metadata": {
+    "filename": "w.prz.edu.pl",
+    "size": 1024,
+    "date": "2025-04-07T18:19:00"
+  }
+}
+```
+
+#### Errors
+
+- `400 Bad Request` – File type not allowed
+- `422 Unprocessable Entity` –Validation error due to malformed request body.
 
 ---
 
@@ -122,13 +157,5 @@ uvicorn app.main:app --reload
 ```
 
 App will be available at: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
-## 🌐 Planned Features
-
-- `POST /website` – extract text from web pages (in progress)
-- Docker support
-- NLP add-ons like summarization or keyword extraction
 
 ---
