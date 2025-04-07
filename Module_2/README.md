@@ -82,8 +82,9 @@ curl -X POST "http://localhost:8000/file" \
 
 #### Errors
 
-- `400 Bad Request` – File type not allowed
-- `413 Payload Too Large` – File exceeds 10 MB
+- `400 Bad Request` – Invalid file type or extension.
+- `413 Payload Too Large` – File exceeds 10 MB.
+- `422 Unprocessable Entity` – Malformed upload request.
 
 ---
 
@@ -116,8 +117,8 @@ curl -X POST "http://localhost:8000/website" \
 
 #### Errors
 
-- `400 Bad Request` – File type not allowed
-- `422 Unprocessable Entity` –Validation error due to malformed request body.
+- `400 Bad Request` – Invalid or unreachable URL.
+- `422 Unprocessable Entity` – Validation error due to malformed request body.
 
 ---
 
