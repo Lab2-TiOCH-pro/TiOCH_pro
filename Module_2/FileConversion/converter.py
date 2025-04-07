@@ -89,7 +89,7 @@ class FileConversion:
 
     def __extract_html(self) -> str:
         soup = BeautifulSoup(self.__file.file, 'html.parser')
-        text = soup.get_text(separator=" ")
+        text = soup.get_text()
         clean_text = re.sub(r'\s+', ' ', text).strip()
         return clean_text
 
