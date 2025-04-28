@@ -35,7 +35,7 @@ Główne modele używane w API:
 <!-- *   **`DocumentMetadata`**: Metadane ekstrahowane podczas konwersji. -->
 <!-- *   **`AnalysisResult`**: Zawiera szczegóły wyniku analizy danych wrażliwych. -->
 
-## Endpointy API
+## 📕 Endpointy API
 
 ### 1. Upload Dokumentów
 
@@ -299,9 +299,9 @@ Główne modele używane w API:
         *   `422 Unprocessable Entity`: Niepoprawny format `document_id`.
         *   `500 Internal Server Error`: Błąd podczas odczytu z GridFS. -->
 
-# Instrukcja Uruchomienia Projektu
+# ⚒️ Instrukcja Uruchomienia Projektu
 
-### Instrukcje
+### 🧾 Instrukcje
 1. Przejdź do folderu projektu:
    ```bash
    cd ścieżka/do/Module_3
@@ -309,25 +309,43 @@ Główne modele używane w API:
 2. Uruchom:
    ```bash
    python -m venv .venv
-   .\.venv\Scripts\activate
+   .\.venv\Scripts\activate # Linux: source venv/bin/activate
    pip install -r requirements.txt
    ```
 
-2. Uruchom projekt:
+3. Uruchom projekt:
    ```bash
    docker-compose up --build    # lub "docker-compose up --build -d" dla działania w tle
    # Jeśli poniższa komenda nie działa (błąd zasad wykonywania), wykonaj:
    # Set-ExecutionPolicy Unrestricted -Scope Process
    ```
 
-3. Sprawdź API:
+4. Sprawdź API:
    - http://127.0.0.1:8000/docs
    - http://127.0.0.1:8000/redoc
 
-4. Zatrzymaj:
+5. Zatrzymaj:
    ```bash
    docker-compose down          # lub "docker-compose down -v" aby usunąć dane MongoDB
 
    # Jeśli użyto Set-ExecutionPolicy wcześniej, przywróć domyślne ustawienia:
    # Set-ExecutionPolicy Restricted -Scope Process
+   ```
+
+### 🧪 Testy
+1. Przejdź do folderu projektu:
+   ```bash
+   cd ścieżka/do/Module_3
+   ```
+
+2. Uruchom (jeżeli nie wybudowano wcześniej wirtualnego środowiska i nie zainstalowano pakietów):
+   ```bash
+   python -m venv .venv
+   .\.venv\Scripts\activate # Linux: source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. Uruchom test:
+   ```bash
+   python -m pytest -v
    ```
