@@ -1,10 +1,10 @@
 import os
 from openai import OpenAI
 from typing import List, Dict, Any
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-# Załadowanie zmiennych środowiskowych
-load_dotenv()
+# Załaduj zmienne środowiskowe z pliku .env (znajdującego się gdziekolwiek w drzewie)
+load_dotenv(find_dotenv())
 
 class LLMDetrcor:
     """
@@ -18,9 +18,10 @@ class LLMDetrcor:
         # Sprawdzenie, czy klucz API jest dostępny
         if not self.api_key:
             print("Ostrzeżenie: Brak klucza API OpenAI. Ustaw zmienną OPENAI_API_KEY w pliku .env")
-        
-        # Inicjalizacja klienta OpenAI
-        self.client = OpenAI(api_key=self.api_key)
+            self.client = None
+        else:
+            # Inicjalizacja klienta OpenAI
+            self.client = OpenAI(api_key=self.api_key)
         
         # Prompt dla modelu
         self.prompt_template = """
@@ -33,6 +34,7 @@ class LLMDetrcor:
             - REGON (9 lub 14 cyfr)  
             - Numery paszportów/dowodów  
             - Daty urodzenia  
+            - Imiona i nazwiska osób  
         2. Dane kontaktowe:  
             - Adresy zamieszkania  
             - Numery telefonów  
@@ -61,7 +63,7 @@ class LLMDetrcor:
         - Przejrzyj tekst linia po linii i dla każdego wystąpienia danych z powyższych kategorii wygeneruj obiekt JSON z polami:
                 • "type": jeden z ("ID","kontakt","finansowe","medyczne","edukacyjne","inne")  
                 • "value": dokładna wykryta wartość  
-                • "confidence": liczba 1–100 określająca pewność detekcji  
+                • "label": etykieta opisująca źródło lub kategorię wykrycia  
 
         – Zwróć wyłącznie jedną tablicę JSON zawierającą wszystkie obiekty, bez dodatkowych komentarzy ani opisu.
 

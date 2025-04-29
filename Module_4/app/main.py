@@ -1,7 +1,13 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv, find_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from app.sensitive_detector import SensitiveDataDetector
+
+# Załaduj zmienne środowiskowe z pliku .env (znajdującego się gdziekolwiek w drzewie)
+load_dotenv(find_dotenv())
 
 class DetectRequest(BaseModel):
     text: str
@@ -9,10 +15,7 @@ class DetectRequest(BaseModel):
 class DetectionResult(BaseModel):
     type: str
     value: str
-    start: int
-    end: int
     label: str
-    confidence: Optional[int] = None
 
 app = FastAPI(
     title="Sensitive Data Detection Service",

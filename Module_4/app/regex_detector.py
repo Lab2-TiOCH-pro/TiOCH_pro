@@ -45,8 +45,6 @@ class RegexDetector:
                 results.append({
                     "type": pat["type"],
                     "value": match.group(),
-                    "start": match.start(),
-                    "end": match.end(),
                     "label": name
                 })
         # Detekcja przez słowa-klucze (case-insensitive)
@@ -61,18 +59,15 @@ class RegexDetector:
                     results.append({
                         "type": item["type"],
                         "value": text[idx:idx+len(kw)],
-                        "start": idx,
-                        "end": idx+len(kw),
                         "label": name
                     })
                     idx += len(kw)
-        # Sortuj po pozycji i usuń duplikaty
-        results = sorted(results, key=lambda x: x["start"])
+        # Usuń duplikaty (type, value, label)
         unique = []
         seen = set()
         for r in results:
-            span = (r["start"], r["end"], r["value"])
-            if span not in seen:
-                seen.add(span)
+            key = (r.get("type"), r.get("value"), r.get("label"))
+            if key not in seen:
+                seen.add(key)
                 unique.append(r)
         return unique 

@@ -19,9 +19,11 @@ env/
 ENV/
 
 # Environment variables
-env*
-.env
-.env.*
+-.env*
+-#.env
+-#.env.*
++.env
++.env.*
 
 # IDEs and editors
 .vscode/
@@ -36,8 +38,7 @@ env*
 *.db
 
 # Docker
-docker-compose.override.yml
-*.env
+ docker-compose.override.yml
 
 # Pytest cache
 .pytest_cache/

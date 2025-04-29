@@ -5,3 +5,7 @@ streamlit
 python-docx
 PyPDF2
 openpyxl 
+fastapi
+uvicorn
+pydantic
+

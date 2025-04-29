@@ -39,8 +39,6 @@ class NERDetector:
             results.append({
                 "type": cat,
                 "value": ent.text,
-                "start": ent.start_char,
-                "end": ent.end_char,
                 "label": lab
             })
         return results 
