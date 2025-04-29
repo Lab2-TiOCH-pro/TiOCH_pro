@@ -5,10 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="57933b96-4ad1-4fa6-8b02-f6679aad39d8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Module_1/interfejs/src/components/HomePage.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Module_1/interfejs/src/components/HomePage.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Module_1/interfejs/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Module_1/interfejs/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Module_1/interfejs/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Module_1/interfejs/src/components/SprawdzPage.css" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/src/components/SprawdzPage.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Module_1/interfejs/src/components/SprawdzPage.js" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/src/components/SprawdzPage.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,41 +27,41 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "zywiecagnieszka"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;zywiecagnieszka&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/Lab2-TiOCH-pro/TiOCH_pro.git",
-    "accountId": "e70e4722-b732-4e75-9b6a-f45c5cf6a80d"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Lab2-TiOCH-pro/TiOCH_pro.git&quot;,
+    &quot;accountId&quot;: &quot;e70e4722-b732-4e75-9b6a-f45c5cf6a80d&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 3
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 3
+}</component>
   <component name="ProjectId" id="2vB8lT8bz2Uvy7EeHUUoGyqqGZk" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "Module__1",
-    "list.type.of.created.stylesheet": "CSS",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "npm.start.executor": "Run",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Module__1&quot;,
+    &quot;list.type.of.created.stylesheet&quot;: &quot;CSS&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;npm.start.executor&quot;: &quot;Run&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="start" type="js.build_tools.npm" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/Module_1/interfejs/package.json" />
@@ -87,6 +88,7 @@
       <option name="presentableId" value="Default" />
       <updated>1743607259729</updated>
       <workItem from="1743607261969" duration="740000" />
+      <workItem from="1745922646940" duration="1289000" />
     </task>
     <servers />
   </component>

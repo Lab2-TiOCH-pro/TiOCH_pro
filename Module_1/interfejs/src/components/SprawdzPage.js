@@ -1,9 +1,20 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDropzone } from "react-dropzone";
 import "./SprawdzPage.css";
 
 const SprawdzPage = () => {
   const navigate = useNavigate();
+  const [files, setFiles] = useState([]);
+
+  const onDrop = useCallback((acceptedFiles) => {
+    setFiles((prev) => [...prev, ...acceptedFiles]);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    multiple: true,
+  });
 
   const handleCheck = () => {
     navigate("/wyniki");
@@ -20,16 +31,32 @@ const SprawdzPage = () => {
       <div className="sprawdz-content">
         <div className="left-column">
           <h2>Wybierz pliki</h2>
-          <label className="file-upload-button">
-            Wybierz plik
-            <input type="file" multiple className="file-input" />
-          </label>
+          <div
+            {...getRootProps({
+              className: `file-upload-button${isDragActive ? " drag-active" : ""}`,
+            })}
+          >
+            <input {...getInputProps()} />
+            {isDragActive
+              ? "Upuść tutaj pliki..."
+              : "Przeciągnij lub kliknij, aby wybrać pliki"}
+          </div>
         </div>
 
         <div className="right-column">
           <h2>Twoje pliki</h2>
           <div className="files-box">
-            <p>Tu będzie lista plików...</p>
+            {files.length === 0 ? (
+              <p>Tu będzie lista plików...</p>
+            ) : (
+              <p>{files.map((file, index) => (
+                <React.Fragment key={index}>
+                  • {file.name}
+                  {index < files.length - 1 && ','}
+                  <br />
+                </React.Fragment>
+              ))}</p>
+            )}
           </div>
           <button className="custom-button sprawdz-button" onClick={handleCheck}>
             SPRAWDŹ
