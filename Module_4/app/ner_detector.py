@@ -12,18 +12,32 @@ class NERDetector:
         for model in models:
             try:
                 self.nlp = spacy.load(model)
+                # Optimize spaCy pipeline: disable everything except NER for faster processing
+                other_pipes = [pipe for pipe in self.nlp.pipe_names if pipe != "ner"]
+                self.nlp.disable_pipes(*other_pipes)
                 break
             except OSError:
                 download(model)
-                self.nlp = spacy.load(model)
-                break
+                try:
+                    self.nlp = spacy.load(model)
+                    # Optimize spaCy pipeline: disable everything except NER for faster processing
+                    other_pipes = [pipe for pipe in self.nlp.pipe_names if pipe != "ner"]
+                    self.nlp.disable_pipes(*other_pipes)
+                    break
+                except OSError:
+                    continue
 
     def detect(self, text: str) -> List[Dict[str, Any]]:
         """
         Wykrywa dane wrażliwe w tekście za pomocą NER spaCy.
         """
         results: List[Dict[str, Any]] = []
-        doc = self.nlp(text)
+        # Safely process text with spaCy
+        try:
+            doc = self.nlp(text)
+        except Exception as e:
+            print(f"spaCy NER processing error: {e}")
+            return []
         for ent in doc.ents:
             lab = ent.label_
             if lab in ("PER", "PERSON"):
