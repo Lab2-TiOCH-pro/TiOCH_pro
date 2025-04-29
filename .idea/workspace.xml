@@ -6,10 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="57933b96-4ad1-4fa6-8b02-f6679aad39d8" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Module_1/interfejs/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Module_1/interfejs/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Module_1/interfejs/src/components/SprawdzPage.css" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/src/components/SprawdzPage.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Module_1/interfejs/src/components/SprawdzPage.js" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/src/components/SprawdzPage.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Module_1/interfejs/src/components/WynikiPage.js" beforeDir="false" afterPath="$PROJECT_DIR$/Module_1/interfejs/src/components/WynikiPage.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,7 +86,7 @@
       <option name="presentableId" value="Default" />
       <updated>1743607259729</updated>
       <workItem from="1743607261969" duration="740000" />
-      <workItem from="1745922646940" duration="1289000" />
+      <workItem from="1745922646940" duration="2296000" />
     </task>
     <servers />
   </component>
