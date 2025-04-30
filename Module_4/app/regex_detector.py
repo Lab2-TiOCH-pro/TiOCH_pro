@@ -14,7 +14,7 @@ class RegexDetector:
             "PASSPORT":   {"regex": re.compile(r"\b[A-Z]{2}\d{7}\b"), "type": "ID"},
             "DATE":       {"regex": re.compile(r"\b\d{2}[./-]\d{2}[./-]\d{4}\b"), "type": "ID"},
             "EMAIL":      {"regex": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"), "type": "kontakt"},
-            "PHONE":      {"regex": re.compile(r"(\+?48\s?)?(?:\d{3}[-\s]?\d{3}[-\s]?\d{3})"), "type": "kontakt"},
+            "PHONE":      {"regex": re.compile(r"(?<!\d)(?:\+?48\s?)?\d{3}(?:[-\s]?\d{3}){2}(?!\d)"), "type": "kontakt"},
             "ACCOUNT":    {"regex": re.compile(r"\b[A-Z]{2}\d{2}(?:\s?\d{4}){6}\b"), "type": "finansowe"},
             "CREDIT_CARD":{"regex": re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"), "type": "finansowe"},
             "MONEY":      {"regex": re.compile(r"\b\d+[.,]?\d*\s?(?:PLN|EUR|USD|GBP)\b"), "type": "finansowe"},
