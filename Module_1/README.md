@@ -35,9 +35,9 @@ npm start
 
 ## Dostępne widoki
 
-* **`HomePage`** – Strona główna z przyciskiem do przejścia dalej.
-* **`SprawdzPage`** – Formularz przesyłania plików i opcjonalnie adresu e-mail.
-* **`WynikiPage`** – Prezentacja wyników i możliwość ich pobrania.
+* **`/`** – Strona główna z przyciskiem do przejścia dalej.
+* **`/sprawdz`** – Formularz przesyłania plików i opcjonalnie adresu e-mail.
+* **`/wyniki`** – Prezentacja wyników i możliwość ich pobrania.
 
 
 ## Wymagania systemowe

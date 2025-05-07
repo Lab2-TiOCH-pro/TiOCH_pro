@@ -6,7 +6,7 @@ const WynikiPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Pobranie e-maila przekazanego ze SprawdzPage
+  const results = location.state?.results || [];
   const email = location.state?.email || null;
 
   const handleDownload = () => {
@@ -15,15 +15,12 @@ const WynikiPage = () => {
 
   return (
     <div className="sprawdz-container" style={{ position: "relative" }}>
-      {/* Logo */}
       <div className="logo">
         <img src="/logo447.png" alt="Logo" style={{ height: "100px", width: "auto" }} />
       </div>
 
-      {/* PRZ INFORMATYKA */}
       <div className="top-right-text">PRZ INFORMATYKA 2025</div>
 
-      {/* Zawartość */}
       <div
         className="sprawdz-content"
         style={{
@@ -34,7 +31,6 @@ const WynikiPage = () => {
           marginTop: "150px",
         }}
       >
-        {/* Lewa kolumna */}
         <div className="left-column" style={{ flex: 1, marginRight: "20px", textAlign: "left" }}>
           <h2>Wyniki</h2>
           <div
@@ -46,14 +42,27 @@ const WynikiPage = () => {
               minHeight: "150px",
             }}
           >
-            <p>Tu będzie lista wyników...</p>
+            {results.length === 0 ? (
+              <p>Brak wyników.</p>
+            ) : (
+              <ul>
+                {results.map((res, idx) => (
+                  <li key={idx}>
+                    <strong>{res.filename}</strong>:{" "}
+                    {res.status === "uploaded" ? (
+                      <span style={{ color: "green" }}>✅ przesłano (ID: {res.documentId})</span>
+                    ) : (
+                      <span style={{ color: "red" }}>❌ błąd – {res.error}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
-        {/* Prawa kolumna */}
         <div className="right-column" style={{ flex: 1, textAlign: "left" }}>
           <h2>Pobierz wyniki</h2>
-
           <button
             className="custom-button"
             onClick={handleDownload}
@@ -70,14 +79,12 @@ const WynikiPage = () => {
         </div>
       </div>
 
-      {/* Przycisk Powrót */}
       <div style={{ position: "absolute", bottom: "80px", right: "20px" }}>
         <button className="custom-button" onClick={() => navigate("/sprawdz")}>
           Powrót
         </button>
       </div>
 
-      {/* Stopka */}
       <div className="footer">Obsługiwane formaty: pdf, word, odt</div>
     </div>
   );

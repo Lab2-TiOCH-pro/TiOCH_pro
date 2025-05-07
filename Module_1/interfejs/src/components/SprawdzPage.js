@@ -8,7 +8,7 @@ const SprawdzPage = () => {
   const [files, setFiles] = useState([]);
   const [email, setEmail] = useState("");
   const [isValidEmail, setIsValidEmail] = useState(true);
-  const [wantsEmail, setWantsEmail] = useState(false); // Stan dla checkboxa
+  const [wantsEmail, setWantsEmail] = useState(false);
 
   const onDrop = useCallback((acceptedFiles) => {
     setFiles((prev) => [...prev, ...acceptedFiles]);
@@ -22,20 +22,40 @@ const SprawdzPage = () => {
   const handleEmailChange = (e) => {
     const value = e.target.value;
     setEmail(value);
-    setIsValidEmail(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)); // Sprawdzanie poprawności e-maila
+    setIsValidEmail(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
   };
 
-  const handleCheck = () => {
-    // Jeśli chce e-maila, sprawdzamy jego poprawność
+  const handleUpload = async () => {
+    if (files.length === 0) {
+      alert("Nie dodano żadnych plików.");
+      return;
+    }
+
     if (wantsEmail && !isValidEmail) {
       alert("Podaj poprawny adres e-mail.");
       return;
     }
 
-    // Jeśli wszystko jest OK, przechodzimy do strony wyników
-    navigate("/wyniki", {
-      state: { email: wantsEmail ? email : null }, // Przesyłamy e-mail tylko, jeśli checkbox jest zaznaczony
-    });
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+    formData.append("uploader_email", wantsEmail ? email : "anonymous@example.com");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/documents", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.status === 207) {
+        const results = await response.json();
+        navigate("/wyniki", { state: { results, email: wantsEmail ? email : null } });
+      } else {
+        const errorText = await response.text();
+        alert(`Błąd serwera: ${response.status} - ${errorText}`);
+      }
+    } catch (err) {
+      alert(`Błąd połączenia: ${err.message}`);
+    }
   };
 
   return (
@@ -60,7 +80,6 @@ const SprawdzPage = () => {
               : "Przeciągnij lub kliknij, aby wybrać pliki"}
           </div>
 
-          {/* Checkbox i pole maila */}
           <div style={{ marginTop: "20px" }}>
             <label>
               <input
@@ -106,7 +125,7 @@ const SprawdzPage = () => {
             )}
           </div>
 
-          <button className="custom-button sprawdz-button" onClick={handleCheck}>
+          <button className="custom-button sprawdz-button" onClick={handleUpload}>
             SPRAWDŹ
           </button>
         </div>
