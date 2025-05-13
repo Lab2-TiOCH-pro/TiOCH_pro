@@ -1,11 +1,12 @@
-openai
-python-dotenv
-spacy
-streamlit
-python-docx
-PyPDF2
-openpyxl 
-fastapi
-uvicorn
-pydantic
+openai==1.78.1
+python-dotenv==1.1.0
+spacy==3.8.5
+streamlit==1.45.1
+python-docx==1.1.2
+PyPDF2==3.0.1
+openpyxl==3.1.5
+fastapi==0.115.12
+uvicorn==0.34.2
+pydantic==2.11.4
+celery==5.4.0
 
