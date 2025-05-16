@@ -85,7 +85,7 @@ const WynikiPage = () => {
         </button>
       </div>
 
-      <div className="footer">Obsługiwane formaty: pdf, word, odt</div>
+      <div className="footer">Obsługiwane formaty: PDF, DOCX, XLSX, CSV, HTML, TXT, JSON i XML. Maksymalny rozmiar przesyłanego pliku: 10 MB</div>
     </div>
   );
 };
