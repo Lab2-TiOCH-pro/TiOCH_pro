@@ -3,6 +3,7 @@ __pycache__/
 
 # Ignore environment variables file
 .env
+.env.*
 
 # Ignore all log files
 *.log
