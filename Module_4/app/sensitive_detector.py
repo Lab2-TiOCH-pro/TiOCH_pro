@@ -1,16 +1,16 @@
 from typing import List, Dict, Any
 from app.regex_detector import RegexDetector
 from app.ner_detector import NERDetector
-from app.llm import LLMDetrcor
+from app.llm import LLMDetector
 
 class SensitiveDataDetector:
     """
-    Wrapper scalający wyniki detekcji z RegexDetector, NERDetector i LLMDetrcor.
+    Wrapper scalający wyniki detekcji z RegexDetector, NERDetector i LLMDetector.
     """
     def __init__(self):
         self.regex = RegexDetector()
         self.ner   = NERDetector()
-        self.llm   = LLMDetrcor()
+        self.llm   = LLMDetector()
 
     def detect(self, text: str) -> List[Dict[str, Any]]:
         # Zbierz wszystkie wyniki

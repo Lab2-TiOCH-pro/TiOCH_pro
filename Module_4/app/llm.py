@@ -6,7 +6,7 @@ from dotenv import load_dotenv, find_dotenv
 # Załaduj zmienne środowiskowe z pliku .env (znajdującego się gdziekolwiek w drzewie)
 load_dotenv(find_dotenv())
 
-class LLMDetrcor:
+class LLMDetector:
     """
     Klasa do wykrywania danych wrażliwych za pomocą modelu GPT-4.1 mini.
     """
