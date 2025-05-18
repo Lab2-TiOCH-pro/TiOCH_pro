@@ -14,13 +14,10 @@ from app.services.documents import DocumentService
 from app.models.documents import (
     DocumentInDB,
     DocumentList,
-    ConversionStatus,
-    AnalysisStatus,
-    AnalysisResult,
+    ConversionStatus
 )
 from app.core.exceptions import (
     DocumentNotFoundException,
-    ConflictException,
     FileNotFoundInGridFSException
 )
 
@@ -57,13 +54,13 @@ def create_sample_doc_in_db(doc_id: str = FAKE_OBJECT_ID, **overrides) -> Docume
         "sizeBytes": 12345,
         "contentHash": "sha256:abcdef123456",
         "originalDocumentPath": f"gridfs:{ObjectId()}",
-        # "conversionStatus": ConversionStatus.STATUS_COMPLETED,
+        "conversionStatus": ConversionStatus.STATUS_PENDING,
         # "conversionTimestamp": datetime.now(timezone.utc),
-        # "normalizedTextRef": f"gridfs:{ObjectId()}",
+        # "normalizedText": "normalized text example",
         # "metadata": DocumentMetadata(pageCount=1),
         # "processingTimeSeconds": 1.5,
-        # "analysisStatus": AnalysisStatus.NOT_STARTED,
         # "analysisResult": None,
+        # "conversionError": "",
     }
 
     data_for_model = {**defaults, **overrides}
@@ -112,7 +109,6 @@ async def test_upload_single_document_success(test_client: AsyncClient, mock_doc
 
     assert keyword_args['file_name'] == 'test_upload.txt'
     assert keyword_args['file_format'] == 'txt'
-    assert keyword_args['file_size'] == len(file_content)
     assert keyword_args['file_content'] == file_content
     assert keyword_args['uploader_email'] == TEST_EMAIL     
 
@@ -312,45 +308,6 @@ async def test_delete_document_not_found(test_client: AsyncClient, mock_document
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "not found" in response.json()["detail"]
     mock_document_service.delete_document.assert_awaited_once_with(FAKE_OBJECT_ID)
-
-# async def test_initiate_analysis_success(test_client: AsyncClient, mock_document_service: AsyncMock):
-#     """Testuje pomyślne zainicjowanie analizy."""
-
-#     updated_doc = create_sample_doc_in_db(
-#         FAKE_OBJECT_ID,
-#         analysisStatus=AnalysisStatus.PENDING,
-#         analysisResult=AnalysisResult(status=AnalysisStatus.PENDING, timestamp=datetime.now(timezone.utc))
-#     )
-#     mock_document_service.initiate_document_analysis.return_value = updated_doc
-
-#     response = await test_client.post(f"/api/documents/{FAKE_OBJECT_ID}/analysis")
-
-#     assert response.status_code == status.HTTP_200_OK
-#     result = response.json()
-#     assert result["analysisStatus"] == "pending"
-#     assert result["analysisResult"]["status"] == "pending"
-#     assert result["_id"] == FAKE_OBJECT_ID
-#     mock_document_service.initiate_document_analysis.assert_awaited_once_with(FAKE_OBJECT_ID)
-
-
-# async def test_initiate_analysis_not_found(test_client: AsyncClient, mock_document_service: AsyncMock):
-#     """Testuje inicjację analizy dla nieistniejącego dokumentu."""
-#     mock_document_service.initiate_document_analysis.side_effect = DocumentNotFoundException("Doc not found")
-
-#     response = await test_client.post(f"/api/documents/{FAKE_OBJECT_ID}/analysis")
-
-#     assert response.status_code == status.HTTP_404_NOT_FOUND
-#     assert "not found" in response.json()["detail"]
-
-
-# async def test_initiate_analysis_conflict(test_client: AsyncClient, mock_document_service: AsyncMock):
-#     """Testuje inicjację analizy, gdy jest to niemożliwe (np. zły status konwersji)."""
-#     mock_document_service.initiate_document_analysis.side_effect = ConflictException("Cannot initiate analysis, conversion not completed.")
-
-#     response = await test_client.post(f"/api/documents/{FAKE_OBJECT_ID}/analysis")
-
-#     assert response.status_code == status.HTTP_409_CONFLICT
-#     assert "Cannot initiate analysis" in response.json()["detail"]
 
 async def test_download_original_content_success(test_client: AsyncClient, mock_document_service: AsyncMock):
     """Testuje pomyślne pobranie oryginalnej zawartości."""

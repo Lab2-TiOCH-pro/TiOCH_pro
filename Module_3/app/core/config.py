@@ -13,9 +13,16 @@ class Settings(BaseSettings):
 
     # Google Cloud Storage settings
     GCS_BUCKET_NAME: Optional[str] = None
+    
+    # Based on Module 2 (http://localhost:8001/file)
+    CONVERSION_SERVICE_URL: Optional[str] = None
+
+    # Based on Module 4 (http://localhost:8002/detect)
+    DETECTION_SERVICE_URL: Optional[str] = None
 
     class Config:
         env_file = ".env"
+        env_file_encoding = 'utf-8'
 
 
 settings = Settings()

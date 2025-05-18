@@ -7,7 +7,7 @@ import io
 from gridfs.errors import NoFile as GridFSFileNotFound
 
 from app.db.repositories.documents import DocumentRepository
-from app.models.documents import DocumentCreate, DocumentUpdate, DocumentInDB, ConversionStatus, AnalysisStatus
+from app.models.documents import DocumentCreate, DocumentInDB
 from app.core.exceptions import DatabaseException, FileNotFoundInGridFSException
 
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection, AsyncIOMotorGridFSBucket, AsyncIOMotorGridOut, AsyncIOMotorCursor
@@ -77,7 +77,7 @@ async def test_create_repo_success(document_repository: DocumentRepository, mock
     mock_fs.upload_from_stream.side_effect = mock_upload_from_stream
     mock_collection.insert_one.side_effect = mock_insert_one
  
-    result_id_str = await document_repository.create(doc_create, file_size, file_content, file_name_for_gridfs)
+    result_id_str = await document_repository.create(doc_create, file_content, file_name_for_gridfs)
  
     assert result_id_str == FAKE_OBJECT_ID_STR
     mock_fs.upload_from_stream.assert_called_once()
@@ -101,7 +101,7 @@ async def test_create_repo_gridfs_failure(document_repository: DocumentRepositor
     mock_fs.upload_from_stream.side_effect = gridfs_boom
 
     with pytest.raises(DatabaseException, match="Failed to create document with GridFS: GridFS Boom!"):
-        await document_repository.create(doc_create, 10, b"fail", "fail.txt")
+        await document_repository.create(doc_create, b"fail", "fail.txt")
 
     mock_collection.insert_one.assert_not_called()
     mock_fs.delete.assert_not_called()
@@ -119,7 +119,7 @@ async def test_create_repo_insert_failure(document_repository: DocumentRepositor
     mock_fs.delete.side_effect = mock_fs_delete
 
     with pytest.raises(DatabaseException, match="Failed to create document with GridFS: Mongo Insert Boom!"):
-        await document_repository.create(doc_create, 20, b"insert fail", "insert_fail.txt")
+        await document_repository.create(doc_create, b"insert fail", "insert_fail.txt")
 
     mock_fs.upload_from_stream.assert_called_once()
     mock_fs.delete.assert_called_once_with(FAKE_OBJECT_ID)
@@ -182,7 +182,7 @@ async def test_delete_repo_success(document_repository: DocumentRepository, mock
 
     mock_collection.find_one.assert_called_once_with(
         {"_id": FAKE_OBJECT_ID},
-        {"originalDocumentPath": 1, "normalizedTextRef": 1}
+        {"originalDocumentPath": 1}
     )
     mock_collection.delete_one.assert_called_once_with({"_id": FAKE_OBJECT_ID})
     

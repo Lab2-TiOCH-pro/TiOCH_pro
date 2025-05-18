@@ -39,12 +39,10 @@ async def test_create_document_service_success(document_service: DocumentService
     file_name = "service_test.txt"
     file_format = "txt"
     file_content = b"Service test"
-    file_size = len(file_content)
 
     result_id = await document_service.create_document(
         file_name=file_name,
         file_format=file_format,
-        file_size=file_size,
         file_content=file_content,
         uploader_email=TEST_EMAIL,
     )
@@ -59,9 +57,8 @@ async def test_create_document_service_success(document_service: DocumentService
     assert create_arg.original_filename == file_name
     assert create_arg.original_format == file_format
     assert create_arg.uploader_email == TEST_EMAIL
-    assert call_args[1] == file_size
-    assert call_args[2] == file_content
-    assert call_args[3] == file_name
+    assert call_args[1] == file_content
+    assert call_args[2] == file_name
 
 
 @pytest.mark.parametrize("file_name, file_size, expected_error", [
@@ -80,7 +77,6 @@ async def test_create_document_service_validation_error(document_service: Docume
         await document_service.create_document(
             file_name=file_name,
             file_format=file_format,
-            file_size=file_size,
             file_content=file_content,
             uploader_email=TEST_EMAIL,
         )

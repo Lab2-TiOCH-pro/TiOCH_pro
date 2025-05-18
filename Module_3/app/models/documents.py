@@ -94,16 +94,15 @@ class AnalysisResult(BaseModel):
 class DocumentMetadata(BaseModel):
     """Metadata extracted by Module (Conversion)."""
 
-    page_count: Optional[int] = Field(None, alias="pageCount")
-    author: Optional[str] = None
-    extracted_properties: Optional[Dict[str, Any]] = Field(
-        None, alias="extractedProperties"
-    )
+    filename: str = Field(..., description="Filename reported by the conversion module.")
+    size: int = Field(..., description="Size in bytes reported by the conversion module.")
+
+    date: Optional[datetime.datetime] = Field(None, description="Date reported by the conversion module.")
 
     model_config = ConfigDict(
         populate_by_name=True,
-        extra='ignore'        
-    ) 
+        extra='ignore'      
+    )
 
 
 class DocumentBase(BaseModel):
@@ -137,11 +136,10 @@ class DocumentUpdate(BaseModel):
         description="The normalized text content to be saved to GridFS. If provided, 'normalizedTextRef' will be updated.",
         alias="normalizedText"
     )
-    metadata: Optional[DocumentMetadata] = Field(None, description="Metadata extracted during conversion.")
+    metadata: Optional[DocumentMetadata] = Field(None, description="Metadata object reported by the conversion module (Module 2).")
     processing_time_seconds: Optional[float] = Field(None, alias="processingTimeSeconds", description="Processing time for conversion in seconds.")
 
     # --- Pola aktualizowane przez Moduł 4 (AI - Analiza) ---
-    analysis_status: Optional[AnalysisStatus] = Field(None, alias="analysisStatus", description="Status of the sensitive data analysis.")
     analysis_result: Optional[AnalysisResult] = Field(None, alias="analysisResult", description="Detailed results of the sensitive data analysis.")
 
     model_config = ConfigDict(
@@ -156,7 +154,6 @@ class DocumentInDB(DocumentBase):
     id: PyObjectId = Field(..., alias="_id", description="Unique identifier for the document (MongoDB ObjectId).")
     upload_timestamp: datetime.datetime = Field(..., alias="uploadTimestamp", description="Timestamp when the document entry was created.")
     content_hash: Optional[str] = Field(None, alias="contentHash", description="SHA-256 hash of the original file content.")
-    size_bytes: int = Field(..., alias="sizeBytes", description="Size of the original file in bytes.")
 
      # --- Pola związane z konwersją (aktualizowane przez Moduł 2) ---
     conversion_timestamp: Optional[datetime.datetime] = Field(None, alias="conversionTimestamp", description="Timestamp when conversion finished.")
@@ -165,12 +162,8 @@ class DocumentInDB(DocumentBase):
     )
     conversion_error: Optional[str] = Field(None, alias="conversionError", description="Error message if conversion failed.")
 
-    # Referencja do znormalizowanego tekstu zapisanego w GridFS
-    normalized_text_ref: Optional[str] = Field(
-        None,
-        description="Reference to the normalized text stored in GridFS (e.g., 'gridfs:ObjectId').",
-        alias="normalizedTextRef",
-    )
+    normalized_text: Optional[str] = Field(None, alias="normalizedText", description="Normalized text content stored directly in the document.")
+    
     metadata: Optional[DocumentMetadata] = Field(None, description="Metadata extracted during conversion.")
 
     # Referencja do oryginalnego pliku zapisanego w GridFS.
@@ -184,11 +177,6 @@ class DocumentInDB(DocumentBase):
     )
 
     # --- Pola związane z analizą (aktualizowane przez Moduł 4) ---
-    analysis_status: AnalysisStatus = Field(
-        default=AnalysisStatus.NOT_STARTED,
-        alias="analysisStatus",
-        description="Status of the sensitive data analysis."
-    )
     analysis_result: Optional[AnalysisResult] = Field(
         None,
         alias="analysisResult",
@@ -200,7 +188,7 @@ class DocumentInDB(DocumentBase):
         arbitrary_types_allowed=True,
         json_encoders={
             ObjectId: str,
-            datetime.datetime: lambda dt: dt.isoformat()
+            datetime.datetime: lambda dt: dt.isoformat() if dt else None
         },
         use_enum_values=True
     )

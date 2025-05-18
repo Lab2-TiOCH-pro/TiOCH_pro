@@ -9,7 +9,7 @@ from fastapi import (
     Form,
     status,
 )
-from typing import Optional, List, AsyncIterator
+from typing import Optional, List
 from datetime import datetime
 import traceback
 
@@ -25,7 +25,6 @@ from app.models.documents import (
 from app.services.documents import DocumentService
 from app.api.dependencies import get_document_service
 from app.core.exceptions import (
-    ConflictException,
     DocumentNotFoundException,
     DatabaseException,
     ValidationException,
@@ -70,10 +69,14 @@ async def upload_documents(
             )
             continue
 
-        file_format = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
         doc_id = None
+        file_content = b""
 
         try:
+            file_format = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+            if not file_format:
+                 raise ValidationException(f"Cannot determine file format for '{filename}'. Missing extension.")
+            
             file_content = await file.read()
             file_size = len(file_content)
 
@@ -83,7 +86,6 @@ async def upload_documents(
             doc_id = await document_service.create_document(
                 file_name=filename,
                 file_format=file_format,
-                file_size=file_size,
                 file_content=file_content,
                 uploader_email=uploader_email,
             )
@@ -94,16 +96,25 @@ async def upload_documents(
                 )
             )
 
-        except (DatabaseException, ValidationException) as e:
-            print(f"Error processing file '{filename}': {e}")
+        except ValidationException as e:
+             print(f"Validation error processing file '{filename}': {e.detail}")
+             results.append(
+                 UploadResultItem(
+                    filename=filename,
+                    status="failed",
+                    error=str(e.detail),
+                 )
+             )
+        except DatabaseException as e:
+            print(f"Database error processing file '{filename}': {e.detail}")
+            traceback.print_exc()
             results.append(
                 UploadResultItem(
                     filename=filename,
                     status="failed",
-                    error=str(e.detail if hasattr(e, "detail") else e),
+                    error="Failed to store document due to a database issue.",
                 )
             )
-
         except Exception as e:
             print(f"Unexpected error processing file '{filename}': {e}")
             traceback.print_exc()
@@ -111,15 +122,14 @@ async def upload_documents(
                 UploadResultItem(
                     filename=filename,
                     status="failed",
-                    error=f"Unexpected server error: {str(e)}",
+                    error="An unexpected server error occurred during upload.",
                 )
             )
         finally:
-            await file.close()
-
-    all_failed = all(r.status == "failed" for r in results)
-    if all_failed:
-        pass
+            try:
+                await file.close()
+            except Exception as close_err:
+                print(f"Error closing file handle for '{filename}': {close_err}")
 
     return results
 
@@ -274,48 +284,6 @@ async def delete_document(
             detail=f"Unexpected error: {str(e)}",
         )
 
-@router.post(
-    "/documents/{document_id}/analysis",
-    response_model=DocumentInDB,
-    status_code=status.HTTP_200_OK,
-    summary="Initiate Sensitive Data Analysis",
-    description="Flags a document for sensitive data analysis. Sets analysis status to 'pending'. Requires conversion to be completed or not required.",
-    responses={
-        status.HTTP_404_NOT_FOUND: {"description": "Document not found"},
-        status.HTTP_409_CONFLICT: {"description": "Analysis cannot be initiated (e.g., wrong conversion status, or analysis already in progress/completed)"},
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Database or internal error"},
-    }
-)
-async def request_document_analysis(
-    document_id: str = Path(..., description="The ID of the document to analyze."),
-    document_service: DocumentService = Depends(get_document_service),
-):
-    """
-    An endpoint used to initiate the process of identifying sensitive data for a specific document.
-    This endpoint *does not* perform analysis, but only updates the document status to 'pending', signaling that the document is ready for analysis.
-    Module 4 will be responsible for downloading the document, analyzing it, and updating the results via PATCH /documents/{document_id}.
-    """
-    try:
-        updated_document = await document_service.initiate_document_analysis(document_id)
-        return updated_document
-    except DocumentNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.detail)
-    except ConflictException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
-    except DatabaseException as e:
-        print(f"DB error initiating analysis for {document_id}: {e.detail}")
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"DB error: {e.detail}",
-        )
-    except Exception as e:
-        print(f"Unexpected error initiating analysis for {document_id}: {e}")
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {str(e)}",
-        )
     
 @router.get(
     "/documents/{document_id}/content/original",
@@ -362,48 +330,3 @@ async def download_original_document(
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Unexpected error: {str(e)}")
 
-
-@router.get(
-    "/documents/{document_id}/content/normalized",
-    summary="Download Normalized Document Text",
-    description="Downloads the normalized text content of the specified document (usually UTF-8).",
-     responses={
-        status.HTTP_200_OK: {
-            "description": "Normalized text content streamed successfully.",
-            "content": {"text/plain": {}}
-        },
-        status.HTTP_404_NOT_FOUND: {"description": "Document or normalized text content not found."},
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Internal server error."},
-    }
-)
-async def download_normalized_text(
-    document_id: str = Path(..., description="The ID of the document whose normalized text is to be downloaded."),
-    document_service: DocumentService = Depends(get_document_service),
-):
-    """Gets the normalized text content of a document."""
-    try:
-        stream_generator, file_metadata = await document_service.get_normalized_document_text(document_id)
-
-        media_type = file_metadata.get("contentType", "text/plain; charset=utf-8")
-        default_filename = f"normalized_{document_id}.txt"
-        filename = file_metadata.get("filename", default_filename)
-
-        headers = {
-            "Content-Disposition": f'attachment; filename="{filename}"'
-        }
-
-        return StreamingResponse(
-            content=stream_generator,
-            media_type=media_type,
-            headers=headers
-        )
-    except (DocumentNotFoundException, FileNotFoundInGridFSException) as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.detail)
-    except DatabaseException as e:
-         print(f"DB error downloading normalized text for {document_id}: {e.detail}")
-         traceback.print_exc()
-         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"DB error: {e.detail}")
-    except Exception as e:
-        print(f"Unexpected error downloading normalized text for {document_id}: {e}")
-        traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Unexpected error: {str(e)}")

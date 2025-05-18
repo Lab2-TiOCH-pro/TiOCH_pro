@@ -1,20 +1,17 @@
 from typing import Optional, Tuple, AsyncIterator, Dict, Any
-from datetime import datetime, timezone
+from datetime import datetime
 from pydantic import EmailStr
 from bson import ObjectId
 
 from app.db.repositories.documents import DocumentRepository
 
 from app.models.documents import (
-    AnalysisResult,
-    AnalysisStatus,
-    ConversionStatus,
     DocumentCreate,
     DocumentUpdate,
     DocumentInDB,
     DocumentList,
 )
-from app.core.exceptions import ConflictException, DatabaseException, DocumentNotFoundException, ValidationException, FileNotFoundInGridFSException
+from app.core.exceptions import DatabaseException, DocumentNotFoundException, ValidationException, FileNotFoundInGridFSException
 
 # Warstwa serwisowa - zawiera logikę biznesową operacji na dokumentach. Oddzielamy logikę API (endpointy) od logiki dostępu do danych (repozytoria).
 
@@ -27,11 +24,12 @@ class DocumentService:
         self,
         file_name: str,
         file_format: str,
-        file_size: int,
         file_content: bytes,
         uploader_email: EmailStr,
     ) -> str:
         """Creates a new document. Performs basic validation and uploads data to the repository."""
+        file_size = len(file_content)
+
         if not file_name:
             raise ValidationException("File name is required.")
         if file_size <= 0:
@@ -44,7 +42,7 @@ class DocumentService:
         )
 
         document_id = await self.document_repository.create(
-            doc_create, file_size, file_content, file_name
+            doc_create, file_content, file_name
         )
 
         return document_id
@@ -115,60 +113,6 @@ class DocumentService:
                 f"Document with ID {document_id} not found for deletion"
             )
         return True
-
-    async def initiate_document_analysis(self, document_id: str) -> DocumentInDB:
-        """
-        Marks a document to be picked up for sensitive data analysis.
-        Sets the analysis status to PENDING.
-        """
-        document = await self.get_document(document_id)
-       
-        allowed_conversion_statuses = [
-            ConversionStatus.STATUS_COMPLETED,
-            ConversionStatus.STATUS_NOT_REQUIRED
-        ]
-
-        if document.conversion_status not in allowed_conversion_statuses:
-             raise ConflictException(
-                 f"Cannot initiate analysis for document '{document_id}'. "
-                 f"Conversion status is '{document.conversion_status.value}'. "
-                 f"Requires status to be one of: {[s.value for s in allowed_conversion_statuses]}."
-            )
-        
-        disallowed_analysis_statuses = [
-            AnalysisStatus.IN_PROGRESS,
-            AnalysisStatus.COMPLETED
-        ]
-
-        if document.analysis_status in disallowed_analysis_statuses:
-            raise ConflictException(
-                f"Analysis for document '{document_id}' cannot be initiated. "
-                f"Current analysis status is '{document.analysis_status.value}'."
-            )
- 
-        analysis_update_payload = DocumentUpdate(
-            analysis_status=AnalysisStatus.PENDING,
-
-            analysis_result=AnalysisResult(
-                status=AnalysisStatus.PENDING,
-                timestamp=datetime.now(timezone.utc)
-            )
-        )
-
-        try:
-            updated_document = await self.document_repository.update(
-                document_id, analysis_update_payload
-            )
-            if updated_document is None:
-                raise DocumentNotFoundException(
-                    f"Document '{document_id}' was not found during the analysis initiation update process."
-                 )
-            return updated_document
-        except DatabaseException as e:
-            raise e
-        except Exception as e:
-            print(f"Unexpected error initiating analysis for {document_id}: {e}")
-            raise DatabaseException(f"Failed to update document status to initiate analysis: {str(e)}")
         
     async def _get_gridfs_content(
         self, document_id: str, attribute_name: str
@@ -207,9 +151,3 @@ class DocumentService:
     ) -> Tuple[AsyncIterator[bytes], Dict[str, Any]]:
         """Gets the data stream of the original document file and its metadata."""
         return await self._get_gridfs_content(document_id, "original_document_path")
-
-    async def get_normalized_document_text(
-        self, document_id: str
-    ) -> Tuple[AsyncIterator[bytes], Dict[str, Any]]:
-        """Takes a data stream of the normalized text of a document and its metadata. Assumes that the text is UTF-8."""
-        return await self._get_gridfs_content(document_id, "normalized_text_ref")

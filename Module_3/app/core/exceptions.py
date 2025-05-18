@@ -1,6 +1,5 @@
 from fastapi import status
 
-
 class BaseCustomException(Exception):
     """Base class for all custom exceptions"""
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
