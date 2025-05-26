@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  mongo:
+    image: mongo
+    container_name: mongo_db_rodo
+    restart: always
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_volume:/data/db
+
+  api:
+    build: .
+    container_name: fastapi_rodo
+    depends_on:
+      - mongo
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  mongo_volume:
