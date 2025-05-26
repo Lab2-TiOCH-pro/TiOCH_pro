@@ -1,0 +1,58 @@
+import spacy
+from typing import List, Dict, Any
+
+class NERDetector:
+    """
+    Klasa do wykrywania danych wrażliwych za pomocą spaCy NER.
+    """
+    def __init__(self):
+        # Attempt to load Polish model, download if missing, fallback to multilingual
+        from spacy.cli import download
+        models = ["pl_core_news_sm", "xx_ent_wiki_sm"]
+        for model in models:
+            try:
+                self.nlp = spacy.load(model)
+                # Optimize spaCy pipeline: disable everything except NER for faster processing
+                other_pipes = [pipe for pipe in self.nlp.pipe_names if pipe != "ner"]
+                self.nlp.disable_pipes(*other_pipes)
+                break
+            except OSError:
+                download(model)
+                try:
+                    self.nlp = spacy.load(model)
+                    # Optimize spaCy pipeline: disable everything except NER for faster processing
+                    other_pipes = [pipe for pipe in self.nlp.pipe_names if pipe != "ner"]
+                    self.nlp.disable_pipes(*other_pipes)
+                    break
+                except OSError:
+                    continue
+
+    def detect(self, text: str) -> List[Dict[str, Any]]:
+        """
+        Wykrywa dane wrażliwe w tekście za pomocą NER spaCy.
+        """
+        results: List[Dict[str, Any]] = []
+        # Safely process text with spaCy
+        try:
+            doc = self.nlp(text)
+        except Exception as e:
+            print(f"spaCy NER processing error: {e}")
+            return []
+        for ent in doc.ents:
+            lab = ent.label_
+            if lab in ("PER", "PERSON"):
+                cat = "imie i nazwisko"
+            elif lab in ("LOC", "GPE", "ADDRESS"):
+                cat = "kontakt"
+            elif lab in ("MONEY", "PERCENT", "QUANTITY"):
+                cat = "finansowe"
+            elif lab in ("DATE", "TIME"):
+                cat = "ID"
+            else:
+                continue
+            results.append({
+                "type": cat,
+                "value": ent.text,
+                "label": lab
+            })
+        return results 

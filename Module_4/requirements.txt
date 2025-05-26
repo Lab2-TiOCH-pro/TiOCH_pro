@@ -1,0 +1,21 @@
+openai==1.78.1
+python-dotenv==1.1.0
+spacy==3.8.5
+streamlit==1.45.1
+python-docx==1.1.2
+PyPDF2==3.0.1
+openpyxl==3.1.5
+fastapi==0.115.12
+uvicorn==0.34.2
+pydantic==2.11.4
+celery==5.4.0
+redis
+
+# For spaCy Polish model, if needed manually: python -m spacy download pl_core_news_sm
+# For spaCy multilingual model, if needed manually: python -m spacy download xx_ent_wiki_sm
+
+# Testing libraries
+pytest
+pytest-asyncio
+httpx
+
