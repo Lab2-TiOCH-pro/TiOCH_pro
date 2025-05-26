@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=ascii">
+    <title>{{ subject }}</title>
+</head>
+<body>
+    <h1>Powiadomienie</h1>
+    <p>{{ message }}</p>
+    {% if details %}
+    <div>
+        <h3>Szczegoly:</h3>
+        <p>{{ details }}</p>
+    </div>
+    {% endif %}
+</body>
+</html>
