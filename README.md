@@ -1,19 +1,14 @@
-# TiOCH_pro
-# 🔧 Infrastruktura
-Usługa	Port kontenera	Port hosta	Opis
-mongo	27017	27017	Baza danych MongoDB (GridFS)
-redis	6379	6379	Kolejka Redis (dla Celery)
-rabbitmq	5672	5672	Protokół AMQP (Celery)
-15672	15672	UI RabbitMQ (http://localhost:15672)
+## Usługi i porty (`docker-compose`)
 
-# 🔙 Backend (API)
-Usługa	Port kontenera	Port hosta	Opis
-extractor_api	8000	8001	Moduł 2 – ekstrakcja tekstu z plików
-datastore_api	8000	8002	Moduł 3 – zarządzanie dokumentami (MongoDB + API)
-detector_api	8000	8003	Moduł 4 – detekcja danych wrażliwych
-detector_worker	—	—	Worker Celery dla Modułu 4 (brak portu, działa w tle)
-notifications_api	8000	8765	Moduł 5 – API powiadomień e‑mail i Slack
-
-# 🖥️ Frontend
-Usługa	Port kontenera	Port hosta	Opis
-tioch_ui	80	80	Moduł 1 – interfejs React (http://localhost)
+| Usługa              | Rola                           | Port lokalny | Port kontenera | Dostęp                                      |
+|---------------------|--------------------------------|--------------|----------------|---------------------------------------------|
+| **mongo**           | Baza danych (MongoDB)          | `27017`      | `27017`        | —                                           |
+| **redis**           | Kolejka Redis (dla Celery)     | `6379`       | `6379`         | —                                           |
+| **rabbitmq**        | Kolejka AMQP + UI              | `5672`       | `5672`         | —                                           |
+|                     | Panel zarządzania RabbitMQ     | `15672`      | `15672`        | [http://localhost:15672](http://localhost:15672) |
+| **extractor**       | API ekstrakcji tekstu (Moduł 2) | `8001`       | `8000`         | [http://localhost:8001/docs](http://localhost:8001/docs) |
+| **datastore**       | API zarządzania dokumentami (Moduł 3) | `8002` | `8000`         | [http://localhost:8002/docs](http://localhost:8002/docs) |
+| **detector-api**    | API detekcji danych wrażliwych (Moduł 4) | `8003` | `8000` | [http://localhost:8003/docs](http://localhost:8003/docs) |
+| **detector-worker** | Celery Worker (Moduł 4)        | —            | —              | —                                           |
+| **notifications**   | API powiadomień (Moduł 5)      | `8765`       | `8765`         | [http://localhost:8765/docs](http://localhost:8765/docs) |
+| **ui**              | Interfejs użytkownika (Moduł 1) | `80`         | `80`           | [http://localhost](http://localhost)        |
