@@ -11,6 +11,9 @@ import logging
 import httpx
 import asyncio
 
+from fastapi.middleware.cors import CORSMiddleware
+
+
 from app.models.documents import AnalysisResult, AnalysisStatus, ConversionStatus, DocumentMetadata, DocumentUpdate
 from app.db.repositories.documents import DocumentRepository
 from app.api.endpoints import documents
@@ -33,6 +36,14 @@ from app.core.exceptions import (
     DatabaseException,
     FileNotFoundInGridFSException,
 )
+
+ALLOWED_ORIGINS = [
+    "http://localhost",
+    "http://localhost:80",
+    "http://127.0.0.1",
+    "http://localhost:3000",
+]
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -289,6 +300,15 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 app.add_exception_handler(FileNotFoundInGridFSException, document_not_found_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

@@ -41,7 +41,7 @@ const SprawdzPage = () => {
     formData.append("uploader_email", wantsEmail ? email : "anonymous@example.com");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/documents", {
+      const response = await fetch("http://127.0.0.1:8002/api/documents", {
         method: "POST",
         body: formData,
       });
