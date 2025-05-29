@@ -1,33 +1,34 @@
 # 🧠 TiOCH Text Extractor API
 
-A FastAPI-powered backend service for extracting clean, readable text from various file formats including PDF, DOCX, XLSX, CSV, HTML, TXT, JSON, and XML.
+A **FastAPI-powered** backend service for extracting clean, readable text from various file formats or from public web pages.
 
 ---
 
 ## 🚀 Features
 
-- 📄 Extracts text from multiple file types
-- 🛡️ Validates file size and type
-- 🧼 Cleans and normalizes the output
-- 📦 Supports MIME-type and extension checking
-- 🧪 Well-structured and testable with pytest
+* 📄 Extracts text from PDF, DOCX, XLSX, CSV, HTML, TXT, JSON, and XML
+* 🌐 Extracts readable text from websites via HTML parsing (in the same endpoint)
+* 🛡️ Validates file size and type
+* 🧼 Cleans and normalizes the output
+* 📦 Supports MIME-type and extension checking
+* 🧪 Well-structured and testable with `pytest`
 
 ---
 
 ## 📁 Supported File Types
 
-| Extension | MIME Type                                           |
-|-----------|-----------------------------------------------------|
+| Extension | MIME Type                                                               |
+| --------- | ----------------------------------------------------------------------- |
 | `.docx`   | application/vnd.openxmlformats-officedocument.wordprocessingml.document |
-| `.pdf`    | application/pdf                                     |
-| `.xlsx`   | application/vnd.openxmlformats-officedocument.spreadsheetml.sheet |
-| `.csv`    | text/csv                                            |
-| `.html`   | text/html                                           |
-| `.txt`    | text/plain                                          |
-| `.json`   | application/json                                    |
-| `.xml`    | application/xml                                     |
+| `.pdf`    | application/pdf                                                         |
+| `.xlsx`   | application/vnd.openxmlformats-officedocument.spreadsheetml.sheet       |
+| `.csv`    | text/csv                                                                |
+| `.html`   | text/html                                                               |
+| `.txt`    | text/plain                                                              |
+| `.json`   | application/json                                                        |
+| `.xml`    | application/xml                                                         |
 
-> Max upload file size: **10 MB**
+> **Max upload file size**: `10 MB`
 
 ---
 
@@ -37,17 +38,16 @@ A FastAPI-powered backend service for extracting clean, readable text from vario
 TiOCH_pro/
 │
 ├── app/
-│   ├── main.py           # FastAPI app entry point
-│   ├── routes.py         # API routes
-│   ├── models.py         # Pydantic models
-│   ├── config.py         # Config constants (MIME types, size)
-│   └── utils.py          # Validation helpers
-│── FileConversion/
-│   └── converter.py           # FileConversion class for text extraction
+│   ├── main.py               # FastAPI app entry point
+│   ├── routes.py             # API routes
+│   ├── models.py             # Pydantic models
+│   ├── config.py             # Config constants
+│   └── utils.py              # Extraction logic and helpers
+├── FileConversion/
+│   └── converter.py          # FileConversion class
 ├── tests/
-│   ├── test_file_upload.py         # Integration tests for /file endpoint
-│   ├── test_website_extraction.py  # Integration tests for /website endpoint
-│   └── test_file_conversion.py     # Unit tests for file content parsing
+│   ├── test_file_upload.py         # File upload & website tests
+│   └── test_file_conversion.py     # File parsing unit tests
 ```
 
 ---
@@ -56,85 +56,59 @@ TiOCH_pro/
 
 ### `POST /file`
 
-Uploads a document and extracts plain text content from supported formats. Supports PDF, DOCX, XLSX, CSV, HTML, TXT, JSON, and XML. Max file size: 10MB.
+Uploads a document **or** a URL and extracts text from it.
 
-#### Request
+#### 📄 Request
 
-Send a `multipart/form-data` request:
+Use `multipart/form-data`:
 
-**Example with `curl`:**
+**Example with `curl` (upload file):**
+
 ```bash
 curl -X POST "http://localhost:8000/file" \
   -F "file=@path/to/your/file.pdf"
 ```
 
-#### Response
-```json
-{
-  "text": "Extracted text content...",
-  "metadata": {
-    "filename": "example.pdf",
-    "size": 1024,
-    "date": "2025-04-07T18:19:00"
-  }
-}
-```
+**Example with `curl` (extract website):**
 
-#### Errors
-
-- `400 Bad Request` – Invalid file type or extension.
-- `413 Payload Too Large` – File exceeds 10 MB.
-- `422 Unprocessable Entity` – Malformed upload request.
-
----
-
-### `POST /website`
-
-Fetches the contents of a public webpage and extracts clean text from its HTML using BeautifulSoup.
-
-#### Request
-
-Send a `application/json` body request:
-
-**Example with `curl`:**
 ```bash
-curl -X POST "http://localhost:8000/website" \
-  -H "Content-Type: application/json" \
-  -d '{"website_url": "https://example.com"}'
+curl -X POST "http://localhost:8000/file" \
+  -F "website_url=https://example.com"
 ```
 
-#### Response
+#### ✅ Response
+
 ```json
 {
   "text": "Extracted text content...",
   "metadata": {
-    "filename": "w.prz.edu.pl",
-    "size": 1024,
-    "date": "2025-04-07T18:19:00"
+    "filename": "example.pdf or https://example.com",
+    "size": 1024
   }
 }
 ```
 
-#### Errors
+#### ⚠️ Errors
 
-- `400 Bad Request` – Invalid or unreachable URL.
-- `422 Unprocessable Entity` – Validation error due to malformed request body.
+* `400` – Invalid file type, URL, or unreachable site
+* `413` – File exceeds 10MB
+* `422` – Neither file nor website\_url provided
 
 ---
 
 ## 🧪 Running Tests
 
-Install test dependencies:
+Install dev dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-Then run tests:
+Then run all tests:
+
 ```bash
 pytest tests/
 ```
-
-> Includes both unit and integration tests for all supported formats.
 
 ---
 
@@ -143,11 +117,9 @@ pytest tests/
 ### 🔧 Install
 
 ```bash
-# Create and activate virtual environment
 python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -157,6 +129,5 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-App will be available at: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
+App will be available at:
+[http://localhost:8000/docs](http://localhost:8000/docs) – FastAPI Swagger UI

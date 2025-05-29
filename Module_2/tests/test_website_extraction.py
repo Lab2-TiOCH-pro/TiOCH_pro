@@ -1,6 +1,14 @@
 import pytest
+import requests_mock
 from fastapi.testclient import TestClient
 from app.main import app
+
+client = TestClient(app)
+
+
+import requests_mock
+from fastapi.testclient import TestClient
+from app.main import app  # upewnij się, że ścieżka jest poprawna
 
 client = TestClient(app)
 
@@ -9,19 +17,22 @@ client = TestClient(app)
 # ------------------------
 
 def test_extract_text_from_valid_website():
-    response = client.post(
-        "/website",
-        json={"website_url": "https://example.com"}
-    )
+    with requests_mock.Mocker() as m:
+        html = "<html><body>Example Domain</body></html>"
+        m.get("https://example.com", text=html)
 
-    assert response.status_code == 200
-    data = response.json()
+        response = client.post(
+            "/file",
+            data={"website_url": "https://example.com"}
+        )
 
-    assert "text" in data
-    assert "metadata" in data
-    assert data["metadata"]["filename"] == "https://example.com"
-    assert isinstance(data["metadata"]["size"], int)
-    assert len(data["text"]) > 0
+        assert response.status_code == 200
+        data = response.json()
+        assert "text" in data
+        assert "metadata" in data
+        assert data["metadata"]["filename"] == "https://example.com"
+        assert isinstance(data["metadata"]["size"], int)
+        assert "Example Domain" in data["text"]
 
 
 # ------------------------
@@ -29,16 +40,18 @@ def test_extract_text_from_valid_website():
 # ------------------------
 
 def test_extract_text_from_invalid_website():
-    response = client.post(
-        "/website",
-        json={"website_url": "http://invalid.url.1234"}
-    )
+    with requests_mock.Mocker() as m:
+        m.get("http://invalid.url.1234", status_code=404)
 
-    assert response.status_code == 400
-    data = response.json()
-    assert "detail" in data
-    assert "Failed to fetch URL" in data["detail"]
+        response = client.post(
+            "/file",
+            data={"website_url": "http://invalid.url.1234"}
+        )
 
+        assert response.status_code == 400
+        data = response.json()
+        assert "detail" in data
+        assert "Failed to fetch URL" in data["detail"]
 
 # ------------------------
 # Edge case: No protocol
@@ -46,7 +59,7 @@ def test_extract_text_from_invalid_website():
 
 def test_extract_text_from_url_without_protocol():
     response = client.post(
-        "/website",
+        "/file",
         json={"website_url": "w.prz.edu.pl"}  # missing http(s)://
     )
 
