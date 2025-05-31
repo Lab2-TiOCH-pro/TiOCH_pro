@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 change_stream_listener_task: asyncio.Task | None = None
 
-async def process_document_pipeline(change_event: dict, repo: DocumentRepository, conversion_url: str, detection_url: str):
+async def process_document_pipeline(change_event: dict, repo: DocumentRepository, conversion_url: str, detection_url: str, notification_url: str):
     """Processes a single insert event from the change stream."""
     doc_id_obj = change_event.get('documentKey', {}).get('_id')
     full_document = change_event.get('fullDocument')
@@ -112,7 +112,7 @@ async def process_document_pipeline(change_event: dict, repo: DocumentRepository
         logger.info(f"[DocID: {document_id}] Sending to M2 - Filename: {gridfs_filename}, Content-Type: {content_type}")
         files_payload = {'file': (gridfs_filename, file_like_object, content_type)}
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=180.0) as client:
             response_m2 = await client.post(conversion_url, files=files_payload) 
             response_m2.raise_for_status()
             conversion_result = response_m2.json() 
@@ -174,6 +174,43 @@ async def process_document_pipeline(change_event: dict, repo: DocumentRepository
         logger.info(f"[DocID: {document_id}] Updating database after successful detection.")
         await repo.update(document_id, analysis_update)
         logger.info(f"[DocID: {document_id}] Database updated after detection.")
+
+        # Wywołanie Module 5 (Powiadomienia)
+        if not notification_url:
+            logger.warning(f"[DocID: {document_id}] Skipping notification: NOTIFICATION_SERVICE_URL not set.")
+        else:
+            uploader_email = full_document.get("uploaderEmail")
+            original_doc_filename = full_document.get("originalFilename", f"document_{document_id}")
+
+            if not uploader_email:
+                logger.warning(f"[DocID: {document_id}] Uploader email not found in document. Skipping notification.")
+            else:
+                logger.info(f"[DocID: {document_id}] Preparing notification for {uploader_email} (Module 5): {notification_url}")
+                notification_payload = {
+                    "email": uploader_email,
+                    "subject": f"Document Analysis Completed: {original_doc_filename} (ID: {document_id})",
+                    "message": (
+                        f"The automated analysis for your document '{original_doc_filename}' "
+                        f"(ID: {document_id}) has been successfully completed."
+                    ),
+                    "details": (
+                        f"Document ID: {document_id}\n"
+                        f"Original Filename: {original_doc_filename}\n"
+                        f"Analysis Status: {AnalysisStatus.COMPLETED.value}\n"
+                        f"Number of Detected PII/Sensitive Items: {len(detection_results)}"
+                    )
+                }
+                try:
+                    async with httpx.AsyncClient(timeout=30.0) as client:
+                        response_m5 = await client.post(notification_url, json=notification_payload)
+                        response_m5.raise_for_status()
+                        logger.info(f"[DocID: {document_id}] Notification Service (Module 5) responded OK. Response: {response_m5.json()}")
+                except httpx.RequestError as exc_notify:
+                    logger.error(f"[DocID: {document_id}] Notification failed: HTTP request error connecting to Notification Service. {exc_notify}")
+                except httpx.HTTPStatusError as exc_notify_status:
+                    logger.error(f"[DocID: {document_id}] Notification failed: HTTP status error from Notification Service. Status: {exc_notify_status.response.status_code}. Response: {exc_notify_status.response.text[:200]}")
+                except Exception as exc_notify_generic:
+                    logger.error(f"[DocID: {document_id}] Notification failed: Unexpected error calling Notification Service. {exc_notify_generic}")
         logger.info(f"[DocID: {document_id}] Processing finished successfully.")
 
     except DocumentNotFoundException as e:
@@ -224,7 +261,7 @@ async def process_document_pipeline(change_event: dict, repo: DocumentRepository
         except Exception as final_error:
              logger.error(f"[DocID: {document_id}] Could not even update status after unexpected error: {final_error}")
 
-async def watch_new_documents(db, fs, conversion_url: str, detection_url: str):
+async def watch_new_documents(db, fs, conversion_url: str, detection_url: str, notification_url: str):
     """Nasłuchuje na kolekcji 'documents' i uruchamia pipeline przetwarzania."""
     repo = DocumentRepository(db, fs)
     collection = db.documents
@@ -238,7 +275,7 @@ async def watch_new_documents(db, fs, conversion_url: str, detection_url: str):
                     # Uruchomiono przetwarzanie jako osobne zadanie asyncio
                     # aby nie blokować odbioru kolejnych zdarzeń
                     asyncio.create_task(process_document_pipeline(
-                        change, repo, conversion_url, detection_url
+                        change, repo, conversion_url, detection_url, notification_url
                     ))
         except asyncio.CancelledError:
             logger.info("Change stream listener task cancelled.")
@@ -260,23 +297,30 @@ async def lifespan(app: FastAPI):
         await connect_to_mongo()
         if db_context.db is not None and db_context.fs is not None:
             logger.info("MongoDB connected.")
+
+            # Sprawdzenie opcjonalnego adresu URL powiadomień (Moduł 5)
+            if not settings.NOTIFICATION_SERVICE_URL:
+                logger.warning("NOTIFICATION_SERVICE_URL not configured or empty. Document processing notifications will be skipped.")
+
+            # Sprawdzenie krytycznych adresów URL do Konwersji (Moduł 3) i Detekcji (Moduł 4)
             if settings.CONVERSION_SERVICE_URL and settings.DETECTION_SERVICE_URL:
-                logger.info("Starting change stream listener...")
+                logger.info("Starting change stream listener with core services (Conversion, Detection) configured.")
                 change_stream_listener_task = asyncio.create_task(
                     watch_new_documents(
                         db_context.db,
                         db_context.fs,
                         settings.CONVERSION_SERVICE_URL,
-                        settings.DETECTION_SERVICE_URL
+                        settings.DETECTION_SERVICE_URL,
+                        settings.NOTIFICATION_SERVICE_URL
                     )
                 )
                 listener_started = True
                 logger.info("Change stream listener task created.")
             else:
-                missing_urls = []
-                if not settings.CONVERSION_SERVICE_URL: missing_urls.append("CONVERSION_SERVICE_URL")
-                if not settings.DETECTION_SERVICE_URL: missing_urls.append("DETECTION_SERVICE_URL")
-                logger.warning(f"Change stream listener WILL NOT start: Missing configuration for {', '.join(missing_urls)}.")
+                missing_critical = []
+                if not settings.CONVERSION_SERVICE_URL: missing_critical.append("CONVERSION_SERVICE_URL")
+                if not settings.DETECTION_SERVICE_URL: missing_critical.append("DETECTION_SERVICE_URL")
+                logger.warning(f"Change stream listener WILL NOT start: Missing critical configuration for {', '.join(missing_critical)}.")
         else:
             logger.error("Change stream listener WILL NOT start: DB connection failed.")
 

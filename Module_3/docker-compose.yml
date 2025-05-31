@@ -84,6 +84,7 @@ services:
       DATABASE_NAME: "tioch"
       CONVERSION_SERVICE_URL: "http://extractor:8000/file"
       DETECTION_SERVICE_URL: "http://detector-api:8000/detect"
+      NOTIFICATION_SERVICE_URL: "http://notifications:8765/api/send-notification"
       PYTHONUNBUFFERED: 1
     volumes:
       - ./app:/app/app
