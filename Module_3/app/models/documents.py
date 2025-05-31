@@ -55,18 +55,15 @@ class PyObjectId(ObjectId):
 # Enum definiujący możliwe statusy konwersji dokumentu (przez Moduł 2).
 class ConversionStatus(str, Enum):
     STATUS_PENDING = "pending"
-    STATUS_IN_PROGRESS = "in_progress"
     STATUS_COMPLETED = "completed"
     STATUS_FAILED = "failed"
-    STATUS_NOT_REQUIRED = "not_required"
 
 # Enum definiujący możliwe statusy analizy danych wrażliwych (przez Moduł 4).
 class AnalysisStatus(str, Enum):
     PENDING = "pending"         
-    IN_PROGRESS = "in_progress"
     COMPLETED = "completed"  
     FAILED = "failed" 
-    NOT_STARTED = "not_started"
+    NOT_STARTED = "not_started" # do testów
     SKIPPED = "skipped"
 
 class AnalysisResult(BaseModel):

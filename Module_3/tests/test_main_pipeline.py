@@ -26,6 +26,7 @@ GRIDFS_TEXT_ID_STR = str(GRIDFS_TEXT_ID_OBJ)
 
 TEST_CONVERSION_URL = "http://fake-conversion.com/file"
 TEST_DETECTION_URL = "http://fake-detection.com/detect"
+TEST_NOTIFICATION_SERVICE_URL = "http://fake-detection.com/api/send-notification"
 
 BASE_CHANGE_EVENT = {
     "documentKey": {"_id": DOC_ID_OBJ},
@@ -82,7 +83,7 @@ async def test_pipeline_happy_path(mock_repo: AsyncMock, mock_http_response: Mag
         mock_client_instance = AsyncMock()
         mock_client_instance.post = AsyncMock(side_effect=[m2_response, m4_response])
         MockClient.return_value.__aenter__.return_value = mock_client_instance
-        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL)
+        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL, TEST_NOTIFICATION_SERVICE_URL)
 
     mock_repo.download_gridfs_file.assert_awaited_once_with(GRIDFS_ORIG_ID_OBJ)
     assert mock_client_instance.post.await_count == 2
@@ -112,7 +113,7 @@ async def test_pipeline_m2_http_error(mock_repo: AsyncMock, mock_http_response: 
     with patch('app.main.httpx.AsyncClient') as MockClient:
         mock_client_instance = AsyncMock(); mock_client_instance.post = AsyncMock(return_value=m2_response)
         MockClient.return_value.__aenter__.return_value = mock_client_instance
-        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL)
+        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL, TEST_NOTIFICATION_SERVICE_URL)
 
     mock_repo.download_gridfs_file.assert_awaited_once()
     mock_client_instance.post.assert_awaited_once_with(TEST_CONVERSION_URL, files=ANY)
@@ -128,7 +129,7 @@ async def test_pipeline_m2_network_error(mock_repo: AsyncMock, mock_http_respons
     with patch('app.main.httpx.AsyncClient') as MockClient:
         mock_client_instance = AsyncMock(); mock_client_instance.post = AsyncMock(side_effect=httpx.RequestError("Connection refused"))
         MockClient.return_value.__aenter__.return_value = mock_client_instance
-        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL)
+        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL, TEST_NOTIFICATION_SERVICE_URL)
 
     mock_repo.download_gridfs_file.assert_awaited_once()
     mock_client_instance.post.assert_awaited_once_with(TEST_CONVERSION_URL, files=ANY)
@@ -145,7 +146,7 @@ async def test_pipeline_m2_response_missing_text(mock_repo: AsyncMock, mock_http
     with patch('app.main.httpx.AsyncClient') as MockClient:
         mock_client_instance = AsyncMock(); mock_client_instance.post = AsyncMock(return_value=m2_response)
         MockClient.return_value.__aenter__.return_value = mock_client_instance
-        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL)
+        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL, TEST_NOTIFICATION_SERVICE_URL)
 
     mock_repo.download_gridfs_file.assert_awaited_once()
     mock_client_instance.post.assert_awaited_once()
@@ -173,7 +174,7 @@ async def test_pipeline_conversion_ok_and_text_none_skip_detection(mock_repo: As
     with patch('app.main.httpx.AsyncClient') as MockClient:
         mock_client_instance = AsyncMock(); mock_client_instance.post = AsyncMock(return_value=m2_response)
         MockClient.return_value.__aenter__.return_value = mock_client_instance
-        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL)
+        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL, TEST_NOTIFICATION_SERVICE_URL)
 
     mock_repo.download_gridfs_file.assert_awaited_once()
     mock_client_instance.post.assert_awaited_once()
@@ -193,7 +194,7 @@ async def test_pipeline_m4_http_error(mock_repo: AsyncMock, mock_http_response: 
     with patch('app.main.httpx.AsyncClient') as MockClient:
         mock_client_instance = AsyncMock(); mock_client_instance.post = AsyncMock(side_effect=[m2_response, m4_response])
         MockClient.return_value.__aenter__.return_value = mock_client_instance
-        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL)
+        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL, TEST_NOTIFICATION_SERVICE_URL)
 
     mock_repo.download_gridfs_file.assert_awaited_once()
     assert mock_client_instance.post.await_count == 2
@@ -213,7 +214,7 @@ async def test_pipeline_m4_bad_json_response(mock_repo: AsyncMock, mock_http_res
     with patch('app.main.httpx.AsyncClient') as MockClient:
         mock_client_instance = AsyncMock(); mock_client_instance.post = AsyncMock(side_effect=[m2_response, m4_response])
         MockClient.return_value.__aenter__.return_value = mock_client_instance
-        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL)
+        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL, TEST_NOTIFICATION_SERVICE_URL)
 
     assert mock_repo.update.await_count == 2
     update2_payload: DocumentUpdate = mock_repo.update.await_args_list[1].args[1]
@@ -226,7 +227,7 @@ async def test_pipeline_gridfs_download_fails(mock_repo: AsyncMock, mock_http_re
     mock_repo.download_gridfs_file.side_effect = FileNotFoundInGridFSException("Test GridFS error")
     with patch('app.main.httpx.AsyncClient') as MockClient:
         mock_client_instance = AsyncMock(); MockClient.return_value.__aenter__.return_value = mock_client_instance
-        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL)
+        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, TEST_DETECTION_URL, TEST_NOTIFICATION_SERVICE_URL)
 
     mock_repo.download_gridfs_file.assert_awaited_once()
     mock_client_instance.post.assert_not_awaited()
@@ -241,7 +242,7 @@ async def test_pipeline_missing_detection_url(mock_repo: AsyncMock, mock_http_re
     with patch('app.main.httpx.AsyncClient') as MockClient:
         mock_client_instance = AsyncMock(); mock_client_instance.post = AsyncMock(return_value=m2_response)
         MockClient.return_value.__aenter__.return_value = mock_client_instance
-        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, None)
+        await process_document_pipeline(change_event, mock_repo, TEST_CONVERSION_URL, None, TEST_NOTIFICATION_SERVICE_URL)
 
     mock_repo.download_gridfs_file.assert_awaited_once()
     mock_client_instance.post.assert_awaited_once_with(TEST_CONVERSION_URL, files=ANY)

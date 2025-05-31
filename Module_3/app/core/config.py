@@ -6,23 +6,18 @@ from typing import Optional
 
 class Settings(BaseSettings):
     API_V1_STR: str = "/api"
-    PROJECT_NAME: str = "Data Management Module"
+    PROJECT_NAME: str = "Data_Management_Module"
 
-    MONGODB_URL: str = "mongodb://mongo:27017/"  # "mongodb://localhost:27017"
-    DATABASE_NAME: str = "sensitive_data_detection"
-
-    # Google Cloud Storage settings
-    GCS_BUCKET_NAME: Optional[str] = None
+    MONGODB_URL: str = "mongodb://mongo:27017/tioch?replicaSet=rs0 "  # "mongodb://localhost:27017"
+    DATABASE_NAME: str = "tioch"
     
-    # Based on Module 2 (http://localhost:8001/file)
-    CONVERSION_SERVICE_URL: Optional[str] = None
+    # Module 2
+    CONVERSION_SERVICE_URL: str = "http://localhost:8001/file"
 
-    # Based on Module 4 (http://localhost:8002/detect)
-    DETECTION_SERVICE_URL: Optional[str] = None
+    # Module 4
+    DETECTION_SERVICE_URL: str = "http://localhost:8003/detect"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = 'utf-8'
-
+    # Module 5
+    NOTIFICATION_SERVICE_URL: str = "http://notifications:8765/api/send-notification"
 
 settings = Settings()

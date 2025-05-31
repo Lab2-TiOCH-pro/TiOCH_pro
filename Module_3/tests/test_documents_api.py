@@ -258,25 +258,6 @@ async def test_update_document_success(test_client: AsyncClient, mock_document_s
     assert update_arg.processing_time_seconds == 5.0
     assert update_arg.normalized_text is None
 
-
-# async def test_update_document_with_normalized_text(test_client: AsyncClient, mock_document_service: AsyncMock):
-#     """Testuje aktualizację z polem normalizedText."""
-#     update_payload = {"normalizedText": "To jest znormalizowany tekst."}
-
-#     updated_doc = create_sample_doc_in_db(FAKE_OBJECT_ID, normalizedTextRef=f"gridfs:{ObjectId()}")
-#     mock_document_service.update_document.return_value = updated_doc
-
-#     response = await test_client.patch(f"/api/documents/{FAKE_OBJECT_ID}", json=update_payload)
-
-#     assert response.status_code == status.HTTP_200_OK
-#     assert response.json()["normalizedTextRef"] is not None
-
-#     mock_document_service.update_document.assert_awaited_once()
-#     call_args = mock_document_service.update_document.call_args[0]
-#     update_arg = call_args[1]
-#     assert update_arg.normalized_text == "To jest znormalizowany tekst."
-
-
 async def test_update_document_not_found(test_client: AsyncClient, mock_document_service: AsyncMock):
     """Testuje aktualizację nieistniejącego dokumentu."""
     mock_document_service.update_document.side_effect = DocumentNotFoundException(f"Document {FAKE_OBJECT_ID} not found")
@@ -336,32 +317,3 @@ async def test_download_original_content_not_found(test_client: AsyncClient, moc
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "not found" in response.json()["detail"]
-
-# async def test_download_normalized_text_success(test_client: AsyncClient, mock_document_service: AsyncMock):
-#     """Testuje pomyślne pobranie znormalizowanego tekstu."""
-#     text_content = "Zażółć gęślą jaźń.\nNormalized text."
-#     byte_content = text_content.encode('utf-8')
-#     metadata = {"contentType": "text/plain; charset=utf-8", "filename": f"normalized_{FAKE_OBJECT_ID}.txt"}
-#     mock_document_service.get_normalized_document_text.return_value = (
-#         mock_async_file_generator(byte_content),
-#         metadata
-#     )
-
-#     response = await test_client.get(f"/api/documents/{FAKE_OBJECT_ID}/content/normalized")
-
-#     assert response.status_code == status.HTTP_200_OK
-#     # Odpowiedź jest w bajtach, dekodujemy do porównania
-#     assert response.content.decode('utf-8') == text_content
-#     assert response.headers["content-type"] == "text/plain; charset=utf-8"
-#     assert f"attachment; filename=\"normalized_{FAKE_OBJECT_ID}.txt\"" in response.headers["content-disposition"]
-#     mock_document_service.get_normalized_document_text.assert_awaited_once_with(FAKE_OBJECT_ID)
-
-
-# async def test_download_normalized_text_not_found(test_client: AsyncClient, mock_document_service: AsyncMock):
-#     """Testuje pobieranie znormalizowanego tekstu, gdy go nie ma."""
-#     mock_document_service.get_normalized_document_text.side_effect = FileNotFoundInGridFSException("Normalized text not found")
-
-#     response = await test_client.get(f"/api/documents/{FAKE_OBJECT_ID}/content/normalized")
-
-#     assert response.status_code == status.HTTP_404_NOT_FOUND
-#     assert "not found" in response.json()["detail"]

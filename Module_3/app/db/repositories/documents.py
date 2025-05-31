@@ -1,4 +1,5 @@
 from enum import Enum
+import mimetypes
 from typing import Optional, Dict, Any, Tuple, AsyncIterator
 from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
@@ -53,11 +54,13 @@ class DocumentRepository:
         gridfs_file_id = None
         try:
             file_stream = io.BytesIO(file_content)
+            guessed_type, _ = mimetypes.guess_type(file_name_for_gridfs)
+            content_type_for_gridfs = guessed_type if guessed_type else "application/octet-stream"
             gridfs_file_id = await self.fs.upload_from_stream(
                 filename=file_name_for_gridfs,
                 source=file_stream,
                 metadata={
-                    "contentType": document_data.original_format,
+                    "contentType": content_type_for_gridfs,
                     "originalFilename": document_data.original_filename,
                     "uploadTimestamp": datetime.now(timezone.utc),
                 },
