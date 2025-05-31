@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 from io import BytesIO
+import mimetypes
 
 from bson import ObjectId
 from fastapi import FastAPI, HTTPException
@@ -10,6 +11,9 @@ import logging
 
 import httpx
 import asyncio
+
+from fastapi.middleware.cors import CORSMiddleware
+
 
 from app.models.documents import AnalysisResult, AnalysisStatus, ConversionStatus, DocumentMetadata, DocumentUpdate
 from app.db.repositories.documents import DocumentRepository
@@ -33,6 +37,14 @@ from app.core.exceptions import (
     DatabaseException,
     FileNotFoundInGridFSException,
 )
+
+ALLOWED_ORIGINS = [
+    "http://localhost",
+    "http://localhost:80",
+    "http://127.0.0.1",
+    "http://localhost:3000",
+]
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,8 +94,14 @@ async def process_document_pipeline(change_event: dict, repo: DocumentRepository
 
         logger.info(f"[DocID: {document_id}] Downloading original file from GridFS: {gridfs_id}")
         content_stream_gen, file_meta = await repo.download_gridfs_file(gridfs_id)
-        content_type = file_meta.get("contentType", "application/octet-stream")
+        content_type = file_meta.get("contentType")
         gridfs_filename = file_meta.get("originalFilename", original_filename)
+        
+        if not content_type or content_type == gridfs_filename.rsplit('.', 1)[-1].lower():
+            guessed_type, _ = mimetypes.guess_type(gridfs_filename)
+            content_type = guessed_type if guessed_type else "application/octet-stream"
+            logger.warning(f"[DocID: {document_id}] ContentType from GridFS was missing or invalid. Guessed as: {content_type} for filename '{gridfs_filename}'")
+
         file_content_bytes = b"".join([chunk async for chunk in content_stream_gen])
         if not file_content_bytes: raise ValueError("Original file content is empty.")
         file_like_object = BytesIO(file_content_bytes)
@@ -91,9 +109,10 @@ async def process_document_pipeline(change_event: dict, repo: DocumentRepository
 
         # Wywołanie Module 2 (Konwersja)
         logger.info(f"[DocID: {document_id}] Calling Conversion Service (Module 2): {conversion_url}")
+        logger.info(f"[DocID: {document_id}] Sending to M2 - Filename: {gridfs_filename}, Content-Type: {content_type}")
         files_payload = {'file': (gridfs_filename, file_like_object, content_type)}
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient() as client:
             response_m2 = await client.post(conversion_url, files=files_payload) 
             response_m2.raise_for_status()
             conversion_result = response_m2.json() 
@@ -289,6 +308,15 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 app.add_exception_handler(FileNotFoundInGridFSException, document_not_found_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
