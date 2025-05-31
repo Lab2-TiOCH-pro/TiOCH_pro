@@ -10,6 +10,40 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: |
+        mongosh --host localhost:27017 --eval "quit(db.adminCommand('ping').ok ? 0 : 1)"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  mongo-init-replica:
+    image: mongo:7
+    container_name: mongo_init_replica
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: >
+      bash -c '
+        echo "mongo-init-replica: MongoDB healthy. Initiating replica set rs0..."
+
+        mongosh --norc --host mongo:27017 <<EOF
+          var cfg = {
+            _id: "rs0",
+            members: [
+              { _id: 0, host: "mongo:27017", priority: 1 }
+            ]
+          };
+          try {
+            rs.initiate(cfg);
+          } catch (e) {
+            if (!e.message.includes("already initialized")) throw e;
+          }
+        EOF
+      '
+    restart: "no"
 
   redis:
     image: redis:7-alpine
@@ -26,8 +60,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     ports:
-      - "5672:5672"     # AMQP
-      - "15672:15672"   # management UI → http://localhost:15672
+      - "5672:5672"
+      - "15672:15672"
 
   # ---------------- backend APIs -----------------
   extractor:
@@ -46,9 +80,12 @@ services:
       context: ./Module_3
     container_name: datastore_api
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+      mongo-init-replica:
+        condition: service_completed_successfully
     environment:
-      MONGO_URI: mongodb://mongo:27017/tioch
+      MONGO_URI: mongodb://mongo:27017/tioch?replicaSet=rs0
       PYTHONUNBUFFERED: 1
     ports:
       - "8002:8000"
@@ -92,7 +129,7 @@ services:
     ports:
       - "8765:8765"
 
-  # ---------------- front‑end ---------------------
+  # ---------------- front-end ---------------------
   ui:
     build:
       context: ./Module_1

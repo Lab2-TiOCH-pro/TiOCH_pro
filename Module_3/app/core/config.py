@@ -12,10 +12,10 @@ class Settings(BaseSettings):
     DATABASE_NAME: str = "tioch"
     
     # Module 2
-    CONVERSION_SERVICE_URL: str = "http://localhost:8001/file"
+    CONVERSION_SERVICE_URL: str = "http://extractor:8000/file"
 
     # Module 4
-    DETECTION_SERVICE_URL: str = "http://localhost:8003/detect"
+    DETECTION_SERVICE_URL: str = "http://detector-api:8000/detect"
 
     # Module 5
     NOTIFICATION_SERVICE_URL: str = "http://notifications:8765/api/send-notification"
