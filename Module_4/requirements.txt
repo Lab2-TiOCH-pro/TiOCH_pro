@@ -11,8 +11,6 @@ pydantic==2.11.4
 celery==5.4.0
 redis
 
-# For spaCy Polish model, if needed manually: python -m spacy download pl_core_news_sm
-# For spaCy multilingual model, if needed manually: python -m spacy download xx_ent_wiki_sm
 
 # Testing libraries
 pytest
