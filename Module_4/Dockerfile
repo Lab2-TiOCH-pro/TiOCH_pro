@@ -13,6 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Skopiuj resztę kodu aplikacji do katalogu roboczego
 COPY ./app ./app
 
+# Dodaj plik .env do obrazu
+COPY .env .env
+
 # Uruchomienie Spacy model download (jeśli jest potrzebny)
 # Jeśli NERDetector używa konkretnego modelu Spacy, który trzeba pobrać,
 # odkomentuj i dostosuj poniższą linię:

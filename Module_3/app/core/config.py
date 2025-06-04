@@ -18,6 +18,6 @@ class Settings(BaseSettings):
     DETECTION_SERVICE_URL: str = "http://detector-api:8000/detect"
 
     # Module 5
-    NOTIFICATION_SERVICE_URL: str = "http://notifications:8765/api/send-notification"
+    NOTIFICATION_SERVICE_URL: str = "http://notifications:8765/api/send-notification/"
 
 settings = Settings()
