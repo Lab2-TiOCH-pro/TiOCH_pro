@@ -14,4 +14,4 @@ celery = Celery(__name__, broker=broker, backend=backend, include=['app.tasks'])
 # Track task start events
 celery.conf.task_track_started = True
 # Automatically discover tasks from the included modules
-celery.autodiscover_tasks(['app.tasks']) 
+celery.autodiscover_tasks(['app.tasks'])

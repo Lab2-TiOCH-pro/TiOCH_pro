@@ -6,6 +6,10 @@ import time
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import asyncio
+import logging
+
+# Get a logger instance
+logger = logging.getLogger(__name__)
 
 async def get_document(document_id: str) -> Dict[str, Any]:
     """
@@ -73,19 +77,23 @@ async def process_document(document_id: str) -> List[Dict[str, Any]]:
     Returns:
         List of detected sensitive data
     """
+    logger.info(f"process_document started for document_id: {document_id}")
+    overall_start_time = time.time() # Start of the entire process_document
     try:
-        start_time = time.time()
-        
         # Get normalized document text
+        logger.info(f"[process_document:{document_id}] Getting normalized text...")
         normalized_text, document_identifier = await get_normalized_text(document_id)
+        logger.info(f"[process_document:{document_id}] Normalized text received (length: {len(normalized_text) if normalized_text else 0}). Identifier: {document_identifier}")
         
         # Perform sensitive data detection
         detector = SensitiveDataDetector()
-        
-        # Check if OpenAI API key is available
         use_llm = bool(os.getenv("OPENAI_API_KEY"))
         
+        logger.info(f"[process_document:{document_id}] Calling detector.detect() with use_llm={use_llm}...")
+        detection_start_time = time.time()
         results = detector.detect(normalized_text, use_llm=use_llm)
+        detection_duration = time.time() - detection_start_time
+        logger.info(f"[process_document:{document_id}] detector.detect() took {detection_duration:.4f}s and returned {len(results) if results is not None else 'None'} items.")
         
         formatted_results = []
         for item in results:
@@ -97,24 +105,23 @@ async def process_document(document_id: str) -> List[Dict[str, Any]]:
                 }
                 formatted_results.append(formatted_item)
         
-        # Calculate analysis time
-        analysis_time = time.time() - start_time
+        # Calculate total processing time for the function
+        total_processing_time = time.time() - overall_start_time
         
         # Prepare data for update in Module 3
         module3_url = os.getenv("MODULE3_API_URL", "http://datastore_api:8000/api/documents/")
         update_url = f"{module3_url}{document_id}"
         
-        # Prepare analysis result
-        analysis_result = {
+        analysis_result_obj = {
             "status": "completed",
             "timestamp": datetime.now().isoformat(),
             "detectedItems": formatted_results,
-            "analysisTime": analysis_time
+            "analysisTime": detection_duration # Use specific detection_duration here
         }
         
-        # Prepare data for update
         update_payload = {
-            "analysisResult": analysis_result
+            "analysisResult": analysis_result_obj,
+            "processingTimeSeconds": total_processing_time # Use overall processing time here
         }
         
         # Send update to Module 3
@@ -126,17 +133,22 @@ async def process_document(document_id: str) -> List[Dict[str, Any]]:
         
         return formatted_results
     except Exception as e:
-        print(f"Error processing document {document_id}: {str(e)}")
+        logger.error(f"[process_document:{document_id}] CRITICAL - Error processing document: {str(e)}", exc_info=True)
         
         # In case of error, update analysis status to "failed"
         try:
+            # processing_time_at_failure should still represent overall time up to failure
+            processing_time_at_failure = time.time() - overall_start_time 
+            error_analysis_result_obj = {
+                "status": "failed",
+                "timestamp": datetime.now().isoformat(),
+                "error": str(e),
+                "detectedItems": [],
+                "analysisTime": None # Or a calculated value if detection part was attempted
+            }
             error_payload = {
-                "analysisResult": {
-                    "status": "failed",
-                    "timestamp": datetime.now().isoformat(),
-                    "error": str(e),
-                    "detectedItems": []
-                }
+                "analysisResult": error_analysis_result_obj,
+                "processingTimeSeconds": processing_time_at_failure
             }
             
             module3_url = os.getenv("MODULE3_API_URL", "http://datastore_api:8000/api/documents/")
@@ -160,12 +172,18 @@ def detect_task(self, text: str, document_id: str = None, use_llm: bool = True):
     Returns:
         List of detected sensitive data
     """
-    start_time = time.time()
+    task_id = self.request.id
+    overall_task_start_time = time.time()
+    logger.info(f"detect_task started. Task ID: {task_id}, Document ID: {document_id}, use_llm: {use_llm}, text length: {len(text) if text else 0}")
     detector = SensitiveDataDetector()
     
     try:
         # Perform detection
+        logger.info(f"[detect_task:{task_id}] Calling detector.detect()...")
+        detection_start_time = time.time()
         results = detector.detect(text, use_llm=use_llm)
+        detection_duration = time.time() - detection_start_time
+        logger.info(f"[detect_task:{task_id}] detector.detect() took {detection_duration:.4f}s and returned {len(results) if results is not None else 'None'} items.")
         
         # Ensure results are in the required format
         formatted_results = []
@@ -178,27 +196,26 @@ def detect_task(self, text: str, document_id: str = None, use_llm: bool = True):
                 }
                 formatted_results.append(formatted_item)
         
-        # If document_id is provid  ed, update Module 3 database with results
+        # If document_id is provided, update Module 3 database with results
         if document_id:
             try:
-                # Calculate analysis time
-                analysis_time = time.time() - start_time
+                # Calculate total task processing time
+                total_task_processing_time = time.time() - overall_task_start_time
                 
                 # Prepare data for Module 3 API
                 module3_url = os.getenv("MODULE3_API_URL", "http://datastore_api:8000/api/documents/")
                 update_url = f"{module3_url}{document_id}"
                 
-                # Prepare analysis result payload
-                analysis_result = {
+                analysis_result_obj = {
                     "status": "completed",
                     "timestamp": datetime.now().isoformat(),
                     "detectedItems": formatted_results,
-                    "analysisTime": analysis_time
+                    "analysisTime": detection_duration # Use specific detection_duration here
                 }
                 
-                # Prepare update payload
                 update_payload = {
-                    "analysisResult": analysis_result
+                    "analysisResult": analysis_result_obj,
+                    "processingTimeSeconds": total_task_processing_time # Use overall task time here
                 }
                 
                 # Send update to Module 3
@@ -214,7 +231,9 @@ def detect_task(self, text: str, document_id: str = None, use_llm: bool = True):
         
         return formatted_results
     except Exception as e:
-        print(f"Error in detect_task: {str(e)}")
+        # Log total task time even in case of failure for retry block
+        failed_task_duration = time.time() - overall_task_start_time 
+        logger.error(f"[detect_task:{task_id}] CRITICAL - Error in detect_task (duration: {failed_task_duration:.4f}s): {str(e)}. Retry: {self.request.retries}/{self.max_retries}", exc_info=True)
         # Retry the task if processing fails
         self.retry(exc=e, countdown=5)
         return []

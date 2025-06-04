@@ -16,7 +16,6 @@ COPY ./app ./app
 # Uruchomienie Spacy model download (jeśli jest potrzebny)
 # Jeśli NERDetector używa konkretnego modelu Spacy, który trzeba pobrać,
 # odkomentuj i dostosuj poniższą linię:
-RUN python -m spacy download pl_core_news_sm && python -m spacy download xx_ent_wiki_sm
 
 # Ujawnij port, na którym działa aplikacja
 EXPOSE 8000

@@ -29,23 +29,27 @@ class LLMDetector:
         self.prompt_template = """
         Your task is to analyze the document content and identify all sensitive data according to GDPR guidelines. You must identify **each individual occurrence** of the following data categories. Don't skip any, even if they seem related or are close to each other. This list is exhaustive for this task:
 
-        - PESEL number
-        - Email addresses
-        - First and last names of individuals
-        - Phone numbers
-        - Residential or correspondence addresses
-        - Credit or debit card numbers
-        - Passport numbers
-        - NIP number
-        - REGON number
-        - Other personal data subject to protection (e.g. ID card number)
+        - PESEL number (11 digits). String of digits according to Polish format (e.g. „85010212345”).
+        - Email addresses. Pattern `local@domain` with allowed characters (`a-z`, `A-Z`, digits, dots, underscores, hyphens) in the local part and domain (e.g. `jan.kowalski@example.com`).
+        - First and last names of individuals. Two-word strings (e.g. „Jan Kowalski”).
+        - Phone numbers (domestic and international). Can have the format `+48 123 456 789`, with a prefix `0` (e.g. `0123 456 789`) or a string of 9 digits (e.g. `123456789`). Keep all spaces, hyphens, or parentheses as they appear in the text.
+        - Residential or correspondence addresses (street, building number, postal code, city). If you find e.g. „ul. Długa 12/3, 00-123 Warszawa” – keep the whole string as `"value"`, set `"type"` to `"location"`, and `"label"` to `"ADRES"`.
+        - Credit or debit card numbers (16 digits, with or without hyphens). Often grouped in groups of four („1234-5678-9012-3456”) or without spaces („1234567890123456”).
+        - Passport numbers (2 letters and 7 digits). String of letters and digits according to Polish format (e.g. „AB1234567”).
+        - ID card numbers (3 letters and 6 digits). String of letters and digits according to Polish format (e.g. „ABC123456”).
+        - Driver's license numbers (9 digits). String of letters and digits according to Polish format (e.g. „ABC123456”).
+        - NIP number (10 digits). String of digits according to Polish format (e.g. „1234563218”).
+        - REGON number (9 or 14 digits). String of digits according to Polish format (e.g. „1234563218”).
+        - Other personal data subject to protection 
 
         Return the result in JSON format as an array of objects, where each object contains:
         - `"type"` – general data category (use only: "ID", "contact", "location", "payment", "other").
         - `"value"` – exact value found in the text, **without any modifications or interpretations**.
         - `"label"` – name of the detected data type (use only: "PESEL", "EMAIL", "IMIE I NAZWISKO", "TELEFON", "ADRES", "KARTA", "PASZPORT", "NIP", "DOWOD_OSOBISTY", "DATA", "DATA URODZENIA", "REGON" or "INNE_DANE" for others).
 
-        Analyze the text carefully. If there is no sensitive data – return an empty array `[]`.
+        Analyze the text thoroughly andcarefully. If there is no sensitive data – return an empty array `[]`.
+
+        
 
         Examples of correct output:
         [
@@ -80,7 +84,7 @@ class LLMDetector:
 
 
         DOCUMENT TO ANALYZE:
-        ---
+        
         {text}
         """
         # Escape all braces to prevent misinterpretation by .format()
@@ -145,40 +149,21 @@ class LLMDetector:
 
                 for item in detected_items:
                     if isinstance(item, dict) and "value" in item and "type" in item and "label" in item:
-                        start_idx = item.get("start_index", -1)
-                        end_idx = item.get("end_index", -1)
                         val = item["value"]
-
-                        if not (isinstance(start_idx, int) and isinstance(end_idx, int) and 0 <= start_idx < end_idx <= len(text) and text[start_idx:end_idx] == val):
-                            try:
-                                found_pos = text.find(val)
-                                if found_pos != -1:
-                                    start_idx = found_pos
-                                    end_idx = found_pos + len(val)
-                                else: 
-                                    start_idx = -1
-                                    end_idx = -1
-                            except: 
-                                start_idx = -1
-                                end_idx = -1
-                        
                         results.append({
                             "value": val,
                             "type": item["type"],
                             "label": item["label"],
-                            "start_index": start_idx,
-                            "end_index": end_idx,
-                            "source": "llm",
-                            "description": item.get("description", f"Wykryte przez LLM ({item['label']})") 
+                            "source": "llm"
                         })
                     else:
                         print(f"LLMDetector: Skipped incomplete element from LLM response: {item}")
             
             except json.JSONDecodeError as e:
-                print(f"LLMDetector: JSON parsing error from LLM response: {e}. Raw response (fragment): {raw_content[:500]}")
-                match = re.search(r"```json\s*(\[.*\])\s*```", raw_content, re.DOTALL)
+                print(f"LLMDetector: JSON parsing error from LLM response. Error: {e}. Raw response (first 500 chars): {raw_content[:500]}")
+                match = re.search(r"```json\\s*(\\[.*\\\\])\\s*```", raw_content, re.DOTALL)
                 if not match:
-                    match = re.search(r"(\[.*\])", raw_content, re.DOTALL) 
+                    match = re.search(r"(\\[.*\\\\])", raw_content, re.DOTALL)
 
                 if match:
                     json_text = match.group(1)
@@ -186,41 +171,27 @@ class LLMDetector:
                         detected_items_fallback = json.loads(json_text)
                         for item_fb in detected_items_fallback:
                             if isinstance(item_fb, dict) and "value" in item_fb and "type" in item_fb and "label" in item_fb:
-                                start_idx_fb = item_fb.get("start_index", -1)
-                                end_idx_fb = item_fb.get("end_index", -1)
                                 val_fb = item_fb["value"]
-                                if not (isinstance(start_idx_fb, int) and isinstance(end_idx_fb, int) and 0 <= start_idx_fb < end_idx_fb <= len(text) and text[start_idx_fb:end_idx_fb] == val_fb):
-                                    try:
-                                        found_pos_fb = text.find(val_fb)
-                                        if found_pos_fb != -1:
-                                            start_idx_fb = found_pos_fb
-                                            end_idx_fb = found_pos_fb + len(val_fb)
-                                        else:
-                                            start_idx_fb = -1
-                                            end_idx_fb = -1
-                                    except:
-                                        start_idx_fb = -1
-                                        end_idx_fb = -1
-
                                 results.append({
                                     "value": val_fb,
                                     "type": item_fb["type"],
                                     "label": item_fb["label"],
-                                    "start_index": start_idx_fb,
-                                    "end_index": end_idx_fb,
-                                    "source": "llm",
-                                    "description": item_fb.get("description", f"Wykryte przez LLM ({item_fb['label']})")
+                                    "source": "llm"
                                 })
                             else:
                                 print(f"LLMDetector: Skipped incomplete element (fallback) from LLM response: {item_fb}")
-                        if results:
-                             print("LLMDetector: Successfully parsed JSON from LLM response (fallback).")
+                        if detected_items_fallback and not results:
+                             print("LLMDetector: Successfully parsed JSON from LLM response (fallback) and added to results.")
+                        elif detected_items_fallback and results:
+                             print("LLMDetector: Appended fallback parsed JSON to existing results.")
 
                     except json.JSONDecodeError:
                         print(f"LLMDetector: Failed to parse extracted JSON array (fallback). Fragment: {json_text[:500]}")
+                else:
+                    print(f"LLMDetector: No JSON array found in raw response using regex (fallback). Raw response (first 500 chars): {raw_content[:500]}")
                 
         except Exception as e:
-            print(f"LLMDetector: An error occurred during LLM detection: {str(e)}")
+            print(f"LLMDetector: CRITICAL - An unexpected error occurred during LLM detection: {str(e)}")
             import traceback
             traceback.print_exc()
             
