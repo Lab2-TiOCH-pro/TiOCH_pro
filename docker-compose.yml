@@ -62,6 +62,13 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    # Dodany healthcheck dla RabbitMQ
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # ---------------- backend APIs -----------------
   extractor:
@@ -95,7 +102,8 @@ services:
       context: ./Module_4
     container_name: detector_api
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy  # Zmienione, aby czekać na gotowość RabbitMQ
     env_file:
       - .env
     environment:
@@ -110,7 +118,8 @@ services:
     container_name: detector_worker
     command: celery -A app.celery_app.celery worker -l info
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy  # Zmienione, aby czekać na gotowość RabbitMQ
     env_file:
       - .env
     environment:
@@ -148,3 +157,4 @@ services:
 
 volumes:
   mongo_data:
+

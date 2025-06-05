@@ -1,16 +1,11 @@
 openai==1.78.1
 python-dotenv==1.1.0
-streamlit==1.45.1
-python-docx==1.1.2
-PyPDF2==3.0.1
-openpyxl==3.1.5
 fastapi==0.115.12
 uvicorn==0.34.2
 pydantic==2.11.4
 celery==5.4.0
-redis
-
-
+redis==5.2.1
+backoff==2.2.1
 # Testing libraries
 pytest
 pytest-asyncio
