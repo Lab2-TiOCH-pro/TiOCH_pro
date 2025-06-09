@@ -2,16 +2,9 @@ import re
 from typing import List, Dict, Any
 
 class RegexDetector:
-    """
-    Ulepszona klasa do wykrywania danych wrażliwych za pomocą wyrażeń regularnych i słów-kluczy.
-    Zoptymalizowana pod kątem produkcyjnego użycia i zgodności z RODO.
-    """
     def __init__(self):
-        # Listy słów kluczowych do wykluczenia z wykrywania imion/nazwisk
         
-        # Profesjonalne wzorce regex dla danych wrażliwych
         self.patterns = {
-            # Identyfikatory osobiste - poprawione wzorce
             "PESEL": {
                 "regex": re.compile(r"\b(?<!\d)([0-9]{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12][0-9]|3[01])[0-9]{5})(?!\d)\b"),
                 "type": "ID",
@@ -41,7 +34,6 @@ class RegexDetector:
                 "priority": 9
             },
             
-            # Daty - bardziej precyzyjny wzorzec
             "DATE_BIRTH": {
                 "regex": re.compile(r"\b((?:19[0-9]{2}|20[0-2][0-9])[-./](?:0[1-9]|1[0-2])[-./](?:0[1-9]|[12][0-9]|3[01])|(?:0[1-9]|[12][0-9]|3[01])[-./](?:0[1-9]|1[0-2])[-./](?:19[0-9]{2}|20[0-2][0-9]))\b"),
                 "type": "dane_osobowe",
@@ -49,7 +41,6 @@ class RegexDetector:
                 "priority": 7
             },
             
-            # Dane kontaktowe - poprawione wzorce
             "EMAIL": {
                 "regex": re.compile(r"\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b"),
                 "type": "kontakt",
@@ -57,7 +48,6 @@ class RegexDetector:
                 "priority": 10
             },
             
-            # Telefon - bardziej restrykcyjny wzorzec
             "PHONE": {
                 "regex": re.compile(r"\b(?<!\d)((?:\+?(?:48|49|33|39|44|43|42|34|31|32|36|30|351|352|353|354|356|357|358|359|370|371|372|373|374|375|376|377|378|380|381|382|383|385|386|387|389|420|421|423)\s?)?(?:\(?[1-9]\d{1,2}\)?[-\s]?)?(?:[1-9]\d{2}[-\s]?[0-9]{3}[-\s]?[0-9]{3}|[1-9]\d{1}[-\s]?[0-9]{2}[-\s]?[0-9]{2}[-\s]?[0-9]{2}))(?!\d)\b"),
                 "type": "kontakt",
@@ -65,7 +55,6 @@ class RegexDetector:
                 "priority": 8
             },
             
-            # Adres - ulepszony wzorzec
             "ADDRESS": {
                 "regex": re.compile(r"\b((?:ul\.|ulica|al\.|aleja|os\.|osiedle|pl\.|plac|rondo|bulwar|bul\.|skwer|skw\.|park)\s+[A-ZĄĆĘŁŃÓŚŹŻ][\wąćęłńóśźż\s,.-]+\s+\d+[A-Za-z]?(?:/\d+[A-Za-z]?)?)\b", re.IGNORECASE),
                 "type": "kontakt",
@@ -79,7 +68,6 @@ class RegexDetector:
                 "priority": 7
             },
             
-            # Numery dokumentów specjalistycznych
             "STUDENT_ID": {
                 "regex": re.compile(r"\b(?:nr\s+)?([A-Z]{2,4}\s?\d{4,8})(?!\d)\b", re.IGNORECASE),
                 "type": "edukacyjne",
@@ -92,7 +80,6 @@ class RegexDetector:
                 "priority": 7
             },
             
-            # Dane finansowe - poprawione wzorce
             "ACCOUNT": {
                 "regex": re.compile(r"\b([A-Z]{2}\d{2}[-\s]?(?:\d{4}[-\s]?){5}\d{4}|\d{26})\b"),
                 "type": "finansowe",
@@ -108,9 +95,8 @@ class RegexDetector:
             },
             
             
-            # Miejsca urodzenia
             "BIRTH_PLACE": {
-                "regex": re.compile(r"\b(?:miejsce\s+ur\.?:?\s*|ur\.\s+w\s+|urodzona?\s+w\s+)([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż\s]+)(?:\s|$)", re.IGNORECASE),
+                "regex": re.compile(r"\b(?:miejsce\s+ur\.?\:?\s*|ur\.\s+w\s+|urodzona\s+w\s+|urodzony\s+w\s+)([A-ZĄĆĘŁŃÓŚŹŻ][a-ząćęłńóśźż\s]+)(?:\s|$)", re.IGNORECASE),
                 "type": "dane_osobowe",
                 "priority": 8
             }
@@ -118,18 +104,12 @@ class RegexDetector:
         
 
     def detect(self, text: str) -> List[Dict[str, Any]]:
-        """
-        Wykrywa dane wrażliwe w tekście za pomocą regex i słów-kluczy.
-        Ulepszona wersja z priorytetami i lepszą filtracją.
-        """
         results: List[Dict[str, Any]] = []
         
-        # Detekcja przez regex z walidacją i priorytetami
         for name, pat in self.patterns.items():
             for match in pat["regex"].finditer(text):
                 value = match.group(1) if match.groups() else match.group()
                 
-                # Walidacja, jeśli dostępna
                 if "validator" in pat and callable(pat["validator"]):
                     if not pat["validator"](value):
                         continue
@@ -144,10 +124,8 @@ class RegexDetector:
                 })
         
         
-        # Sortowanie według priorytetu (malejąco) i pozycji
         results.sort(key=lambda x: (-x.get("priority", 5), x.get("start", 0)))
         
-        # Usuwanie nakładających się wyników o niższym priorytecie
         filtered_results = []
         for result in results:
             is_overlapping = False
@@ -160,11 +138,9 @@ class RegexDetector:
                     break
             
             if not is_overlapping:
-                # Usuń pola techniczne przed dodaniem do wyników
                 clean_result = {k: v for k, v in result.items() if k not in ["priority", "start", "end"]}
                 filtered_results.append(clean_result)
         
-        # Deduplikacja końcowa
         unique_results = []
         seen = set()
         for r in filtered_results:
