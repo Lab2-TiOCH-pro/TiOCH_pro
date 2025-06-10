@@ -9,8 +9,22 @@ const WynikiPage = () => {
   const results = location.state?.results || [];
   const email = location.state?.email || null;
 
+  // Jeśli jesteśmy po /ladowanie/:id, to odczytaj wynik z localStorage:
+  const wynikAnalizy = JSON.parse(localStorage.getItem("wynikAnalizy"));
+
   const handleDownload = () => {
-    alert("Pobieranie wyników...");
+    if (!wynikAnalizy) {
+      alert("Brak danych do pobrania.");
+      return;
+    }
+
+    const blob = new Blob([JSON.stringify(wynikAnalizy, null, 2)], {
+      type: "application/json",
+    });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "wynik_analizy.json";
+    link.click();
   };
 
   return (
@@ -40,11 +54,15 @@ const WynikiPage = () => {
               borderRadius: "10px",
               padding: "10px",
               minHeight: "150px",
+              maxHeight: "350px",
+              overflowY: "auto",
             }}
           >
-            {results.length === 0 ? (
-              <p>Brak wyników.</p>
-            ) : (
+            {wynikAnalizy ? (
+              <pre style={{ fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
+                {JSON.stringify(wynikAnalizy, null, 2)}
+              </pre>
+            ) : results.length > 0 ? (
               <ul>
                 {results.map((res, idx) => (
                   <li key={idx}>
@@ -57,6 +75,8 @@ const WynikiPage = () => {
                   </li>
                 ))}
               </ul>
+            ) : (
+              <p>Brak danych do wyświetlenia.</p>
             )}
           </div>
         </div>
@@ -69,6 +89,7 @@ const WynikiPage = () => {
             style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "10px" }}
           >
             <img src="/pobierz.png" alt="Pobierz" style={{ height: "30px" }} />
+            Pobierz jako JSON
           </button>
 
           {email && (
@@ -85,7 +106,9 @@ const WynikiPage = () => {
         </button>
       </div>
 
-      <div className="footer">Obsługiwane formaty: PDF, DOCX, XLSX, CSV, HTML, TXT, JSON i XML. Maksymalny rozmiar przesyłanego pliku: 10 MB</div>
+      <div className="footer">
+        Obsługiwane formaty: PDF, DOCX, XLSX, CSV, HTML, TXT, JSON i XML. Maksymalny rozmiar przesyłanego pliku: 10 MB
+      </div>
     </div>
   );
 };
