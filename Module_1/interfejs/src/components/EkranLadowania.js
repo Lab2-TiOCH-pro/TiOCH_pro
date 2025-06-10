@@ -1,21 +1,25 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./EkranLadowania.css";
 
-function EkranLadowania({ idPliku }) {
+function EkranLadowania() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const ids = location.state?.ids || [];
 
   useEffect(() => {
     const interval = setInterval(() => {
       fetch("http://localhost:8002/api/documents/")
         .then((res) => res.json())
         .then((dane) => {
-          const lista = dane.documents;
-          const dokument = lista.find((d) => d._id === idPliku);
+          const lista = dane.documents || [];
+          const wyniki = ids
+            .map((id) => lista.find((d) => d._id === id))
+            .filter((d) => d && d.analysisResult);
 
-          if (dokument?.analysisResult) {
+          if (wyniki.length === ids.length) {
             clearInterval(interval);
-            localStorage.setItem("wynikAnalizy", JSON.stringify(dokument.analysisResult));
+            localStorage.setItem("wynikAnalizy", JSON.stringify(wyniki));
             navigate("/wyniki");
           }
         })
@@ -25,13 +29,17 @@ function EkranLadowania({ idPliku }) {
     }, 500);
 
     return () => clearInterval(interval);
-  }, [idPliku, navigate]);
+  }, [ids, navigate]);
+
+  if (!ids.length) {
+    return <p style={{ color: "white" }}>Brak dokumentów do sprawdzenia.</p>;
+  }
 
   return (
     <div className="loader-container">
       <img src="/logo447.png" alt="Logo" className="logo" />
       <div className="loader" />
-      <h2>Analizujemy Twój dokument...</h2>
+      <h2>Analizujemy Twoje dokumenty.</h2>
       <p>To może potrwać kilka sekund. Prosimy o cierpliwość.</p>
     </div>
   );
