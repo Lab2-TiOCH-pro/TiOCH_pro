@@ -24,6 +24,7 @@ const SprawdzPage = () => {
     setEmail(value);
     setIsValidEmail(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
   };
+
   const handleUpload = async () => {
     if (files.length === 0) {
       alert("Nie dodano żadnych plików.");
@@ -48,14 +49,15 @@ const SprawdzPage = () => {
       const data = await response.json();
       console.log("Odpowiedź z backendu:", data);
 
-      const id = Array.isArray(data) ? data[0]?.documentId : data.documentId;
+      const dokumenty = Array.isArray(data) ? data : [data];
+      const ids = dokumenty.map((d) => d.documentId).filter(Boolean);
 
-      if (!id) {
-        alert("Brak ID dokumentu w odpowiedzi.");
+      if (ids.length === 0) {
+        alert("Brak ID dokumentów w odpowiedzi.");
         return;
       }
 
-      navigate(`/ladowanie/${id}`);
+      navigate("/ladowanie", { state: { ids } });
     } catch (err) {
       alert(`Błąd połączenia: ${err.message}`);
     }
@@ -66,9 +68,7 @@ const SprawdzPage = () => {
       <div className="logo">
         <img src="/logo447.png" alt="Logo" style={{ height: "100px", width: "auto" }} />
       </div>
-
       <div className="top-right-text">PRZ INFORMATYKA 2025</div>
-
       <div className="sprawdz-content">
         <div className="left-column">
           <h2>Wybierz pliki</h2>
@@ -82,7 +82,6 @@ const SprawdzPage = () => {
               ? "Upuść tutaj pliki..."
               : "Przeciągnij lub kliknij, aby wybrać pliki"}
           </div>
-
           <div style={{ marginTop: "20px" }}>
             <label>
               <input
@@ -92,7 +91,6 @@ const SprawdzPage = () => {
               />
               Chcę dostać wyniki na e-maila
             </label>
-
             {wantsEmail && (
               <div>
                 <input
@@ -134,9 +132,7 @@ const SprawdzPage = () => {
         </div>
       </div>
 
-      <div className="footer">
-        Obsługiwane formaty: PDF, DOCX, XLSX, CSV, HTML, TXT, JSON i XML. Maksymalny rozmiar przesyłanego pliku: 10 MB
-      </div>
+      <div className="footer">Obsługiwane formaty: PDF, DOCX, XLSX, CSV, HTML, TXT, JSON i XML. Maksymalny rozmiar przesyłanego pliku: 10 MB</div>
     </div>
   );
 };
