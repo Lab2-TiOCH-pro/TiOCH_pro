@@ -24,7 +24,6 @@ const SprawdzPage = () => {
     setEmail(value);
     setIsValidEmail(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
   };
-
   const handleUpload = async () => {
     if (files.length === 0) {
       alert("Nie dodano żadnych plików.");
@@ -37,22 +36,26 @@ const SprawdzPage = () => {
     }
 
     const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
+    formData.append("files", files[0]);
     formData.append("uploader_email", wantsEmail ? email : "anonymous@example.com");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/documents", {
+      const response = await fetch("http://localhost:8002/api/documents/", {
         method: "POST",
         body: formData,
       });
 
-      if (response.status === 207) {
-        const results = await response.json();
-        navigate("/wyniki", { state: { results, email: wantsEmail ? email : null } });
-      } else {
-        const errorText = await response.text();
-        alert(`Błąd serwera: ${response.status} - ${errorText}`);
+      const data = await response.json();
+      console.log("Odpowiedź z backendu:", data);
+
+      const id = Array.isArray(data) ? data[0]?.documentId : data.documentId;
+
+      if (!id) {
+        alert("Brak ID dokumentu w odpowiedzi.");
+        return;
       }
+
+      navigate(`/ladowanie/${id}`);
     } catch (err) {
       alert(`Błąd połączenia: ${err.message}`);
     }
@@ -131,7 +134,9 @@ const SprawdzPage = () => {
         </div>
       </div>
 
-      <div className="footer">Obsługiwane formaty: PDF, DOCX, XLSX, CSV, HTML, TXT, JSON i XML. Maksymalny rozmiar przesyłanego pliku: 10 MB</div>
+      <div className="footer">
+        Obsługiwane formaty: PDF, DOCX, XLSX, CSV, HTML, TXT, JSON i XML. Maksymalny rozmiar przesyłanego pliku: 10 MB
+      </div>
     </div>
   );
 };

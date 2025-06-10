@@ -1,8 +1,9 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-dom";
 import HomePage from "./components/HomePage";
 import SprawdzPage from "./components/SprawdzPage";
 import WynikiPage from "./components/WynikiPage";
+import EkranLadowania from "./components/EkranLadowania";
 
 function App() {
   return (
@@ -12,10 +13,16 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/sprawdz" element={<SprawdzPage />} />
           <Route path="/wyniki" element={<WynikiPage />} />
+          <Route path="/ladowanie/:id" element={<LadowanieWrapper />} /> {/* nowa trasa */}
         </Routes>
       </div>
     </Router>
   );
+}
+
+function LadowanieWrapper() {
+  const { id } = useParams();
+  return <EkranLadowania idPliku={id} />;
 }
 
 export default App;

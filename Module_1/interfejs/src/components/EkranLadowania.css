@@ -1,0 +1,46 @@
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #0F2C3D;
+  color: #76FDFE;
+  position: relative;
+  padding: 0 20px;
+}
+
+.logo {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  height: 80px;
+}
+
+.loader {
+  border: 8px solid rgba(255, 255, 255, 0.2);
+  border-top: 8px solid #76FDFE;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1.2s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #76FDFE;
+}
+
+p {
+  color: #cccccc;
+  margin-top: 10px;
+}
