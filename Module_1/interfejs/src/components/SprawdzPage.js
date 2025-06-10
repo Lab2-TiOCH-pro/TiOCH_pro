@@ -36,7 +36,7 @@ const SprawdzPage = () => {
     }
 
     const formData = new FormData();
-    formData.append("files", files[0]);
+    files.forEach((file) => formData.append("files", file));
     formData.append("uploader_email", wantsEmail ? email : "anonymous@example.com");
 
     try {
