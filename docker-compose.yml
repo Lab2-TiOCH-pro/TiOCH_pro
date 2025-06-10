@@ -138,6 +138,10 @@ services:
       DJANGO_SETTINGS_MODULE: notifications_project.settings
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-}
       PYTHONUNBUFFERED: 1
     ports:
       - "8765:8765"
