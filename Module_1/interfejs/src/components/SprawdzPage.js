@@ -44,18 +44,19 @@ const SprawdzPage = () => {
         method: "POST",
         body: formData,
       });
-
       const data = await response.json();
       console.log("Odpowiedź z backendu:", data);
 
-      const id = Array.isArray(data) ? data[0]?.documentId : data.documentId;
+      const dokumenty = Array.isArray(data) ? data : [data];
+      const ids = dokumenty.map((d) => d.documentId).filter(Boolean);
 
-      if (!id) {
-        alert("Brak ID dokumentu w odpowiedzi.");
+      if (ids.length === 0) {
+        alert("Brak ID dokumentów w odpowiedzi.");
         return;
       }
 
-      navigate(`/ladowanie/${id}`);
+      navigate("/ladowanie", { state: { ids } });
+
     } catch (err) {
       alert(`Błąd połączenia: ${err.message}`);
     }

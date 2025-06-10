@@ -9,23 +9,26 @@ const WynikiPage = () => {
   const results = location.state?.results || [];
   const email = location.state?.email || null;
 
-  // Jeśli jesteśmy po /ladowanie/:id, to odczytaj wynik z localStorage:
-  const wynikAnalizy = JSON.parse(localStorage.getItem("wynikAnalizy"));
+  const wynikAnalizy = JSON.parse(localStorage.getItem("wynikAnalizy")) || [];
+    const handleDownload = () => {
+      if (!wynikAnalizy || !wynikAnalizy.length) {
+        alert("Brak danych do pobrania.");
+        return;
+      }
 
-  const handleDownload = () => {
-    if (!wynikAnalizy) {
-      alert("Brak danych do pobrania.");
-      return;
-    }
+      const onlyDetected = wynikAnalizy.map((doc) => ({
+        filename: doc.filename || doc.originalFilename,
+        detectedItems: doc.analysisResult?.detectedItems || [],
+      }));
 
-    const blob = new Blob([JSON.stringify(wynikAnalizy, null, 2)], {
-      type: "application/json",
-    });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "wynik_analizy.json";
-    link.click();
-  };
+      const blob = new Blob([JSON.stringify(onlyDetected, null, 2)], {
+        type: "application/json",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "wynik_analizy.json";
+      link.click();
+    };
 
   return (
     <div className="sprawdz-container" style={{ position: "relative" }}>
@@ -59,9 +62,20 @@ const WynikiPage = () => {
             }}
           >
             {wynikAnalizy ? (
-              <pre style={{ fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
-                {JSON.stringify(wynikAnalizy, null, 2)}
-              </pre>
+                <ul>
+                  {wynikAnalizy.map((dokument, idx) => (
+                    <li key={idx} style={{ marginBottom: "20px" }}>
+                      <strong>{dokument.filename || dokument.originalFilename}</strong>
+                      <ul style={{ marginTop: "5px" }}>
+                        {(dokument.analysisResult?.detectedItems || []).map((item, i) => (
+                          <li key={i}>
+                            <strong>{item.label}</strong>: {item.value}
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
             ) : results.length > 0 ? (
               <ul>
                 {results.map((res, idx) => (

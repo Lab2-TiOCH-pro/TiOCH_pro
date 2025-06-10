@@ -13,7 +13,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/sprawdz" element={<SprawdzPage />} />
           <Route path="/wyniki" element={<WynikiPage />} />
-          <Route path="/ladowanie/:id" element={<LadowanieWrapper />} /> {/* nowa trasa */}
+          <Route path="/ladowanie" element={<EkranLadowania />} /> {/* nowa trasa */}
         </Routes>
       </div>
     </Router>
