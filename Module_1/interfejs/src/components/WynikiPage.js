@@ -1,24 +1,23 @@
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "./SprawdzPage.css";
 
 const WynikiPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const results = location.state?.results || [];
-  const email = location.state?.email || null;
-
-  // Jeśli jesteśmy po /ladowanie/:id, to odczytaj wynik z localStorage:
-  const wynikAnalizy = JSON.parse(localStorage.getItem("wynikAnalizy"));
+  const wynikAnalizy = JSON.parse(localStorage.getItem("wynikAnalizy")) || [];
 
   const handleDownload = () => {
-    if (!wynikAnalizy) {
+    if (!wynikAnalizy || !wynikAnalizy.length) {
       alert("Brak danych do pobrania.");
       return;
     }
 
-    const blob = new Blob([JSON.stringify(wynikAnalizy, null, 2)], {
+    const onlyDetected = wynikAnalizy.map((doc) => ({
+      filename: doc.filename || doc.originalFilename,
+      detectedItems: doc.analysisResult?.detectedItems || [],
+    }));
+
+    const blob = new Blob([JSON.stringify(onlyDetected, null, 2)], {
       type: "application/json",
     });
     const link = document.createElement("a");
@@ -32,71 +31,38 @@ const WynikiPage = () => {
       <div className="logo">
         <img src="/logo447.png" alt="Logo" style={{ height: "100px", width: "auto" }} />
       </div>
-
       <div className="top-right-text">PRZ INFORMATYKA 2025</div>
 
-      <div
-        className="sprawdz-content"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          width: "100%",
-          maxWidth: "1000px",
-          marginTop: "150px",
-        }}
-      >
+      <div className="sprawdz-content" style={{ display: "flex", justifyContent: "space-between", width: "100%", maxWidth: "1000px", marginTop: "150px" }}>
         <div className="left-column" style={{ flex: 1, marginRight: "20px", textAlign: "left" }}>
           <h2>Wyniki</h2>
-          <div
-            className="files-box"
-            style={{
-              border: "1px solid #76FDFE",
-              borderRadius: "10px",
-              padding: "10px",
-              minHeight: "150px",
-              maxHeight: "350px",
-              overflowY: "auto",
-            }}
-          >
-            {wynikAnalizy ? (
-              <pre style={{ fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
-                {JSON.stringify(wynikAnalizy, null, 2)}
-              </pre>
-            ) : results.length > 0 ? (
-              <ul>
-                {results.map((res, idx) => (
-                  <li key={idx}>
-                    <strong>{res.filename}</strong>:{" "}
-                    {res.status === "uploaded" ? (
-                      <span style={{ color: "green" }}>✅ przesłano (ID: {res.documentId})</span>
-                    ) : (
-                      <span style={{ color: "red" }}>❌ błąd – {res.error}</span>
-                    )}
-                  </li>
+          <div className="files-box" style={{ border: "1px solid #76FDFE", borderRadius: "10px", padding: "10px", minHeight: "150px" }}>
+            {wynikAnalizy && wynikAnalizy.length > 0 ? (
+              <div>
+                {wynikAnalizy.map((doc, idx) => (
+                  <div key={idx} style={{ marginBottom: "1rem" }}>
+                    <strong>{doc?.metadata?.filename || doc.originalFilename || `Dokument ${idx + 1}`}</strong>
+                    <ul style={{ marginTop: "0.5rem" }}>
+                      {(doc.analysisResult?.detectedItems || []).map((item, i) => (
+                        <li key={i}>
+                          <strong>{item.label}:</strong> {item.value}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             ) : (
-              <p>Brak danych do wyświetlenia.</p>
+              <p>Brak wyników do wyświetlenia.</p>
             )}
           </div>
         </div>
 
         <div className="right-column" style={{ flex: 1, textAlign: "left" }}>
           <h2>Pobierz wyniki</h2>
-          <button
-            className="custom-button"
-            onClick={handleDownload}
-            style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "10px" }}
-          >
+          <button className="custom-button" onClick={handleDownload} style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "10px" }}>
             <img src="/pobierz.png" alt="Pobierz" style={{ height: "30px" }} />
-            Pobierz jako JSON
           </button>
-
-          {email && (
-            <p style={{ fontSize: "0.95rem", color: "#76FDFE" }}>
-              Wyniki dotrą na adres e-mail: <strong>{email}</strong>
-            </p>
-          )}
         </div>
       </div>
 
