@@ -1,0 +1,164 @@
+version: '3.9'
+
+services:
+  # ---------------- infrastructure ----------------
+  mongo:
+    image: mongo:7
+    container_name: mongo_db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: |
+        mongosh --host localhost:27017 --eval "quit(db.adminCommand('ping').ok ? 0 : 1)"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  mongo-init-replica:
+    image: mongo:7
+    container_name: mongo_init_replica
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: >
+      bash -c '
+        echo "mongo-init-replica: MongoDB healthy. Initiating replica set rs0..."
+
+        mongosh --norc --host mongo:27017 <<EOF
+          var cfg = {
+            _id: "rs0",
+            members: [
+              { _id: 0, host: "mongo:27017", priority: 1 }
+            ]
+          };
+          try {
+            rs.initiate(cfg);
+          } catch (e) {
+            if (!e.message.includes("already initialized")) throw e;
+          }
+        EOF
+      '
+    restart: "no"
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    # Dodany healthcheck dla RabbitMQ
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------- backend APIs -----------------
+  extractor:
+    build:
+      context: ./Module_2
+    container_name: extractor_api
+    depends_on:
+      - mongo
+    ports:
+      - "8001:8000"
+    environment:
+      PYTHONUNBUFFERED: 1
+
+  datastore:
+    build:
+      context: ./Module_3
+    container_name: datastore_api
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mongo-init-replica:
+        condition: service_completed_successfully
+    environment:
+      MONGO_URI: mongodb://mongo:27017/tioch?replicaSet=rs0
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8002:8000"
+
+  detector-api:
+    build:
+      context: ./Module_4
+    container_name: detector_api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy  # Zmienione, aby czekać na gotowość RabbitMQ
+    env_file:
+      - .env
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8003:8000"
+
+  detector-worker:
+    build:
+      context: ./Module_4
+    container_name: detector_worker
+    command: celery -A app.celery_app.celery worker -l info
+    depends_on:
+      rabbitmq:
+        condition: service_healthy  # Zmienione, aby czekać na gotowość RabbitMQ
+    env_file:
+      - .env
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: rpc://
+      PYTHONUNBUFFERED: 1
+
+  notifications:
+    build:
+      context: ./Module_5
+    container_name: notifications_api
+    depends_on:
+      - redis
+    environment:
+      DJANGO_SETTINGS_MODULE: notifications_project.settings
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8765:8765"
+
+  # ---------------- front-end ---------------------
+  ui:
+    build:
+      context: ./Module_1
+    container_name: tioch_ui
+    depends_on:
+      - extractor
+      - datastore
+      - detector-api
+      - notifications
+    ports:
+      - "80:80"
+
+volumes:
+  mongo_data:
+

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+      # Dodaj tutaj inne potrzebne zmienne środowiskowe, np. klucze API
+      # - OPENAI_API_KEY=twoj_klucz_api
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./app:/app/app  # Opcjonalnie: mapowanie kodu dla dewelopmentu na żywo
+
+  worker:
+    build: .
+    command: celery -A app.celery_app.celery worker -l info
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+      # Dodaj tutaj inne potrzebne zmienne środowiskowe
+      # - OPENAI_API_KEY=twoj_klucz_api
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./app:/app/app  # Opcjonalnie: mapowanie kodu dla dewelopmentu na żywo
+
+  rabbitmq:
+    image: rabbitmq:3.12-management # Wersja z interfejsem zarządzania
+    ports:
+      - "5672:5672"  # Port AMQP
+      - "15672:15672" # Port interfejsu zarządzania (dostępny pod http://localhost:15672)
+    environment:
+      # Domyślne dane logowania to guest:guest, ale można je zmienić
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+volumes:
+  app_code: # Definicja wolumenu, jeśli zdecydujesz się go używać 
